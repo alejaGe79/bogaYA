@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BogaYA - Tu abogado al instante</title>
+    <link rel="manifest" href="/bogaya/public/manifest.json">
+    <link rel="stylesheet" href="/bogaya/public/css/style.css">
+    <link rel="apple-touch-icon" href="/bogaya/public/icons/icon-192.png">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- HEADER -->
+        <header id="header">
+            <div class="logo">
+                <i class="fas fa-scale-balanced"></i>
+                <span class="logo-boga">Boga</span><span class="logo-ya">YA</span>
+            </div>
+            <div id="user-info">
+                <span id="user-name"></span>
+                <button id="logout-btn" style="display:none;" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main id="main-content">
+            <!-- VISTA HOME -->
+            <div id="view-home" class="view active">
+                <section class="hero-section">
+                    <h1>¿Necesitás un <span class="highlight">abogado</span>?</h1>
+                    <p class="subtitle">Contanos tu situación y te guiamos al profesional indicado.</p>
+                </section>
+
+                <section class="wizard-card">
+                    <h2><i class="fas fa-comments"></i> Contame tu problema</h2>
+                    <p class="hint">Hacé clic en una burbuja para completar el texto o escribí tu propio resumen.</p>
+
+                    <textarea id="problemaTexto" class="wizard-textarea"
+                        placeholder="Ej: Mi ex no me pasa la cuota alimentaria de mi hijo..." rows="3"></textarea>
+
+                    <div class="wizard-examples">
+                        <button type="button" class="wizard-chip"
+                            data-texto="Necesito asesoría por un despido injustificado y que me paguen la indemnización">
+                            Despido
+                        </button>
+                        <button type="button" class="wizard-chip"
+                            data-texto="Quiero iniciar un divorcio y definir la tenencia de mis hijos">
+                            Divorcio
+                        </button>
+                        <button type="button" class="wizard-chip"
+                            data-texto="Sufrí un accidente de tránsito y necesito reclamar los daños y perjuicios">
+                            Accidente
+                        </button>
+                        <button type="button" class="wizard-chip"
+                            data-texto="Me están desalojando de mi vivienda y necesito defensa legal urgente">
+                            Desalojo
+                        </button>
+                        <button type="button" class="wizard-chip"
+                            data-texto="Tengo un problema con una herencia y necesito asesoría sobre la sucesión">
+                            Herencia
+                        </button>
+                        <button type="button" class="wizard-chip"
+                            data-texto="Quiero denunciar un delito y necesito representación legal penal">
+                            Denuncia penal
+                        </button>
+                    </div>
+
+                    <button type="button" id="btnDetectar" class="btn-primary btn-block" onclick="detectSpecialty()">
+                        <i class="fas fa-search"></i> Encontrar abogado
+                    </button>
+
+                    <div id="wizardResultado" class="wizard-result" style="display:none"></div>
+                </section>
+
+                <h2 class="section-title">O elegí por especialidad</h2>
+                <div id="especialidadesGrid" class="especialidades-grid">
+                    <div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>
+                </div>
+
+                <div id="lawyer-results" style="margin-top: 20px;">
+                    <h2 class="section-title">Abogados disponibles</h2>
+                    <div id="lawyer-list" class="card-list"></div>
+                </div>
+            </div>
+
+            <!-- VISTA DASHBOARD CLIENTE -->
+            <div id="view-dashboard" class="view">
+                <h1><i class="fas fa-folder-open"></i> Mis Casos</h1>
+                <button class="btn-primary btn-block" onclick="showCaseModal()">
+                    <i class="fas fa-plus"></i> Publicar nuevo caso
+                </button>
+                <div id="my-cases" class="card-list" style="margin-top:16px;"></div>
+            </div>
+
+            <!-- VISTA DASHBOARD ABOGADO -->
+            <div id="view-dashboard-lawyer" class="view">
+                <h1><i class="fas fa-gavel"></i> Mi Dashboard</h1>
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" onclick="switchLawyerTab('aceptados')">✅ Aceptados</button>
+                    <button class="tab-btn" onclick="switchLawyerTab('ofrecidos')">📩 Ofrecidos</button>
+                    <button class="tab-btn" onclick="switchLawyerTab('cerrados')">📁 Cerrados</button>
+                    <button class="tab-btn" onclick="switchLawyerTab('vigentes')">🌟 Vigentes</button>
+                </div>
+                <div id="lawyer-cases-list" class="card-list"></div>
+            </div>
+
+            <!-- VISTA AGENDA -->
+            <div id="view-agenda" class="view">
+                <h1><i class="fas fa-calendar-alt"></i> Mi Agenda</h1>
+                <div id="appointment-list" class="card-list"></div>
+            </div>
+
+            <!-- VISTA BUSCADOR -->
+            <div id="view-search" class="view">
+                <h1><i class="fas fa-search"></i> Buscar abogados</h1>
+                <div class="search-box">
+                    <select id="search-especialidad" class="form-select">
+                        <option value="">Todas las especialidades</option>
+                    </select>
+                    <select id="search-provincia" class="form-select">
+                        <option value="">Todas las provincias</option>
+                    </select>
+                    <select id="search-modo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="virtual">Virtual</option>
+                        <option value="presencial">Presencial</option>
+                    </select>
+                    <button class="btn-primary" onclick="searchLawyers()">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+                <div id="search-results" class="card-list"></div>
+            </div>
+
+            <!-- VISTA PERFIL -->
+            <div id="view-profile" class="view">
+                <h1><i class="fas fa-user"></i> Mi Perfil</h1>
+                <div id="profile-content"></div>
+            </div>
+
+            <!-- VISTA ADMIN -->
+            <div id="view-admin" class="view">
+                <h1><i class="fas fa-shield-alt"></i> Panel de Administración</h1>
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="switchAdminTab('abogados')">👨‍⚖️ Abogados</button>
+                    <button class="tab-btn" onclick="switchAdminTab('casos')">📂 Casos</button>
+                    <button class="tab-btn" onclick="switchAdminTab('reseñas')">⭐ Reseñas</button>
+                    <button class="tab-btn" onclick="switchAdminTab('usuarios')">👤 Usuarios</button>
+                    <button class="tab-btn" onclick="switchAdminTab('estadisticas')">📊 Estadísticas</button>
+                    <button class="tab-btn" onclick="switchAdminTab('pendientes')">⏳ Pendientes</button>
+                </div>
+                <div id="admin-content" class="card-list"></div>
+            </div>
+
+            <!-- VISTA MENSAJES -->
+            <div id="view-messages" class="view">
+                <h1><i class="fas fa-envelope"></i> Mensajes</h1>
+                <div id="messages-list" class="card-list"></div>
+            </div>
+        </main>
+
+        <!-- BOTTOM NAV -->
+        <nav id="bottom-nav">
+            <button onclick="navigateTo('home')" data-view="home" class="active">
+                <i class="fas fa-home"></i> Inicio
+            </button>
+            <button onclick="navigateTo('search')" data-view="search" id="nav-search">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            <button onclick="navigateTo('agenda')" data-view="agenda" id="nav-agenda" style="display:none;">
+                <i class="fas fa-calendar-alt"></i> Agenda
+            </button>
+            <button onclick="navigateTo('dashboard')" data-view="dashboard" id="nav-dashboard" style="display:none;">
+                <i class="fas fa-folder-open"></i> Casos
+            </button>
+            <button onclick="navigateTo('profile')" data-view="profile">
+                <i class="fas fa-user"></i> Perfil
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/bogaya/public/sw.js')
+                .then(reg => console.log('SW registrado'))
+                .catch(err => console.log('Error SW:', err));
+        }
+    </script>
+
+    <script src="/bogaya/public/js/api.js"></script>
+    <script src="/bogaya/public/js/auth.js"></script>
+    <script src="/bogaya/public/js/notifications.js"></script>
+    <script src="/bogaya/public/js/app.js"></script>
+</body>
+
+</html>

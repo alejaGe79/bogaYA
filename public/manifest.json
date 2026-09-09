@@ -1,0 +1,21 @@
+{
+    "name": "Bogaya - Tu abogado al instante",
+    "short_name": "Bogaya",
+    "description": "Encuentra abogados y gestiona tu estudio legal",
+    "start_url": "/bogaya/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1a237e",
+    "icons": [
+        {
+            "src": "/bogaya/public/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/bogaya/public/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
