@@ -1040,136 +1040,563 @@ window.loadProfile = async function () {
 // EDICIÓN DE PERFIL - ABOGADO (con todos los campos)
 // ============================================================
 
-function showEditProfileModal() {
+async function showEditProfileModal() {
     const role = getRole();
-    const userId = localStorage.getItem('bogaya_user_id');
+
+    const userId =
+        localStorage.getItem(
+            'bogaya_user_id'
+        );
+
+    if (!userId) {
+        alert('Sesión inválida. Volvé a iniciar sesión.');
+        return;
+    }
+
+    // ========================================================
+    // ABOGADO
+    // ========================================================
 
     if (role === 'lawyer') {
-        getLawyer(userId).then(data => {
-            const p = data.success ? data.data : {};
-            const especialidades = p.especialidades ? p.especialidades.split(', ') : [];
-            const modal = document.createElement('div');
+        try {
+            const data =
+                await getLawyer(userId);
+
+            const p =
+                data.success
+                    ? data.data
+                    : {};
+
+            const especialidades =
+                p.especialidades
+                    ? p.especialidades
+                        .split(',')
+                        .map(e => e.trim())
+                        .filter(Boolean)
+                    : [];
+
+            const modal =
+                document.createElement('div');
+
             modal.className = 'modal';
             modal.id = 'editProfileModal';
+
             modal.innerHTML = `
-                <div class="modal-content" style="max-width:500px; max-height:90vh; overflow-y:auto;">
-                    <h2><i class="fas fa-edit"></i> Editar perfil</h2>
-                    <form id="editProfileForm" enctype="multipart/form-data">
+                <div class="modal-content"
+                     style="max-width:500px; max-height:90vh; overflow-y:auto;">
+
+                    <h2>
+                        <i class="fas fa-edit"></i>
+                        Editar perfil
+                    </h2>
+
+                    <form id="editProfileForm"
+                          enctype="multipart/form-data">
+
                         <label>Nombre completo</label>
-                        <input type="text" name="name" value="${p.name || ''}" required>
-                        
+
+                        <input
+                            type="text"
+                            name="name"
+                            value="${p.name || ''}"
+                            required
+                        >
+
                         <label>Email</label>
-                        <input type="email" name="email" value="${p.email || ''}" required>
-                        
+
+                        <input
+                            type="email"
+                            name="email"
+                            value="${p.email || ''}"
+                            required
+                        >
+
                         <label>Teléfono</label>
-                        <input type="text" name="phone" value="${p.phone || ''}">
-                        
+
+                        <input
+                            type="text"
+                            name="phone"
+                            value="${p.phone || ''}"
+                        >
+
                         <label>Matrícula *</label>
-                        <input type="text" name="matricula" value="${p.matricula || ''}" required>
-                        
-                        <label>Especialidades (separadas por coma)</label>
-                        <input type="text" name="especialidades" value="${especialidades.join(', ')}" placeholder="Laboral, Civil, Penal">
-                        
+
+                        <input
+                            type="text"
+                            name="matricula"
+                            value="${p.matricula || ''}"
+                            required
+                        >
+
+                        <label>
+                            Especialidades
+                        </label>
+
+                        <select
+                            name="especialidades[]"
+                            multiple
+                            size="7"
+                        >
+                            <option value="Laboral">Laboral</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Penal">Penal</option>
+                            <option value="Familia">Familia</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Inmobiliario">Inmobiliario</option>
+                            <option value="Tributario">Tributario</option>
+                            <option value="Ambiental">Ambiental</option>
+                            <option value="Sucesiones">Sucesiones</option>
+                        </select>
+
+                        <small>
+                            Mantené presionado Ctrl o seleccioná
+                            varias opciones en el celular.
+                        </small>
+
                         <label>Provincia</label>
+
                         <select name="provincia">
-                            <option value="CABA" ${p.provincia === 'CABA' ? 'selected' : ''}>CABA</option>
-                            <option value="Buenos Aires" ${p.provincia === 'Buenos Aires' ? 'selected' : ''}>Buenos Aires</option>
-                            <option value="Córdoba" ${p.provincia === 'Córdoba' ? 'selected' : ''}>Córdoba</option>
-                            <option value="Santa Fe" ${p.provincia === 'Santa Fe' ? 'selected' : ''}>Santa Fe</option>
-                            <option value="Mendoza" ${p.provincia === 'Mendoza' ? 'selected' : ''}>Mendoza</option>
-                            <option value="Tucumán" ${p.provincia === 'Tucumán' ? 'selected' : ''}>Tucumán</option>
-                            <option value="Salta" ${p.provincia === 'Salta' ? 'selected' : ''}>Salta</option>
-                            <option value="Jujuy" ${p.provincia === 'Jujuy' ? 'selected' : ''}>Jujuy</option>
-                            <option value="La Pampa" ${p.provincia === 'La Pampa' ? 'selected' : ''}>La Pampa</option>
-                            <option value="Río Negro" ${p.provincia === 'Río Negro' ? 'selected' : ''}>Río Negro</option>
-                            <option value="Neuquén" ${p.provincia === 'Neuquén' ? 'selected' : ''}>Neuquén</option>
-                            <option value="Chubut" ${p.provincia === 'Chubut' ? 'selected' : ''}>Chubut</option>
-                            <option value="Santa Cruz" ${p.provincia === 'Santa Cruz' ? 'selected' : ''}>Santa Cruz</option>
-                            <option value="Tierra del Fuego" ${p.provincia === 'Tierra del Fuego' ? 'selected' : ''}>Tierra del Fuego</option>
+
+                            <option value="CABA"
+                                ${p.provincia === 'CABA' ? 'selected' : ''}>
+                                CABA
+                            </option>
+
+                            <option value="Buenos Aires"
+                                ${p.provincia === 'Buenos Aires' ? 'selected' : ''}>
+                                Buenos Aires
+                            </option>
+
+                            <option value="Córdoba"
+                                ${p.provincia === 'Córdoba' ? 'selected' : ''}>
+                                Córdoba
+                            </option>
+
+                            <option value="Santa Fe"
+                                ${p.provincia === 'Santa Fe' ? 'selected' : ''}>
+                                Santa Fe
+                            </option>
+
+                            <option value="Mendoza"
+                                ${p.provincia === 'Mendoza' ? 'selected' : ''}>
+                                Mendoza
+                            </option>
+
+                            <option value="Tucumán"
+                                ${p.provincia === 'Tucumán' ? 'selected' : ''}>
+                                Tucumán
+                            </option>
+
+                            <option value="Salta"
+                                ${p.provincia === 'Salta' ? 'selected' : ''}>
+                                Salta
+                            </option>
+
+                            <option value="Jujuy"
+                                ${p.provincia === 'Jujuy' ? 'selected' : ''}>
+                                Jujuy
+                            </option>
+
+                            <option value="La Pampa"
+                                ${p.provincia === 'La Pampa' ? 'selected' : ''}>
+                                La Pampa
+                            </option>
+
+                            <option value="Río Negro"
+                                ${p.provincia === 'Río Negro' ? 'selected' : ''}>
+                                Río Negro
+                            </option>
+
+                            <option value="Neuquén"
+                                ${p.provincia === 'Neuquén' ? 'selected' : ''}>
+                                Neuquén
+                            </option>
+
+                            <option value="Chubut"
+                                ${p.provincia === 'Chubut' ? 'selected' : ''}>
+                                Chubut
+                            </option>
+
+                            <option value="Santa Cruz"
+                                ${p.provincia === 'Santa Cruz' ? 'selected' : ''}>
+                                Santa Cruz
+                            </option>
+
+                            <option value="Tierra del Fuego"
+                                ${p.provincia === 'Tierra del Fuego' ? 'selected' : ''}>
+                                Tierra del Fuego
+                            </option>
+
                         </select>
-                        
+
                         <label>Biografía</label>
-                        <textarea name="bio" rows="3">${p.bio || ''}</textarea>
-                        
-                        <label>Costo de consulta (ARS)</label>
-                        <input type="number" name="costo_consulta" value="${p.costo_consulta || 0}" step="0.01" min="0">
-                        
-                        <label>Modalidades de atención</label>
-                        <div style="display:flex; gap:16px; margin:4px 0 8px;">
-                            <label><input type="checkbox" name="virtual" value="1" ${p.virtual ? 'checked' : ''}> Virtual</label>
-                            <label><input type="checkbox" name="presencial" value="1" ${p.presencial ? 'checked' : ''}> Presencial</label>
+
+                        <textarea
+                            name="bio"
+                            rows="3"
+                        >${p.bio || ''}</textarea>
+
+                        <label>
+                            Costo de consulta (ARS)
+                        </label>
+
+                        <input
+                            type="number"
+                            name="costo_consulta"
+                            value="${p.costo_consulta || 0}"
+                            step="0.01"
+                            min="0"
+                        >
+
+                        <label>
+                            Modalidades de atención
+                        </label>
+
+                        <div
+                            style="
+                                display:flex;
+                                gap:16px;
+                                margin:4px 0 8px;
+                            "
+                        >
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="virtual"
+                                    value="1"
+                                    ${p.virtual ? 'checked' : ''}
+                                >
+                                Virtual
+                            </label>
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="presencial"
+                                    value="1"
+                                    ${p.presencial ? 'checked' : ''}
+                                >
+                                Presencial
+                            </label>
+
                         </div>
-                        
-                        <label>¿Mostrar teléfono?</label>
+
+                        <label>
+                            ¿Mostrar teléfono?
+                        </label>
+
                         <select name="mostrar_telefono">
-                            <option value="1" ${p.mostrar_telefono == 1 ? 'selected' : ''}>Sí</option>
-                            <option value="0" ${p.mostrar_telefono == 0 ? 'selected' : ''}>No</option>
+
+                            <option
+                                value="1"
+                                ${p.mostrar_telefono == 1 ? 'selected' : ''}
+                            >
+                                Sí
+                            </option>
+
+                            <option
+                                value="0"
+                                ${p.mostrar_telefono == 0 ? 'selected' : ''}
+                            >
+                                No
+                            </option>
+
                         </select>
-                        
-                        <label>Foto de perfil</label>
-                        <input type="file" name="foto" accept="image/*">
-                        ${p.foto ? `<img src="${p.foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:8px;">` : ''}
-                        
+
+                        <label>
+                            Foto de perfil
+                        </label>
+
+                        <input
+                            type="file"
+                            name="foto"
+                            accept="image/jpeg,image/png,image/webp"
+                        >
+
+                        ${p.foto
+                    ? `
+                                    <img
+                                        src="${p.foto}"
+                                        alt="Foto de perfil actual"
+                                        style="
+                                            width:80px;
+                                            height:80px;
+                                            border-radius:50%;
+                                            object-fit:cover;
+                                            margin-top:8px;
+                                        "
+                                    >
+                                  `
+                    : ''
+                }
+
                         <div class="btn-group">
-                            <button type="submit" class="btn-primary">Guardar</button>
-                            <button type="button" class="btn-secondary" onclick="closeModal('editProfileModal')">Cancelar</button>
+
+                            <button
+                                type="submit"
+                                class="btn-primary"
+                            >
+                                Guardar
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn-secondary"
+                                onclick="closeModal('editProfileModal')"
+                            >
+                                Cancelar
+                            </button>
+
                         </div>
+
                     </form>
+
                 </div>
             `;
+
             document.body.appendChild(modal);
 
-            document.getElementById('editProfileForm').addEventListener('submit', async function (e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                try {
-                    await updateLawyerProfileFormData(formData);
-                    alert('✅ Perfil actualizado correctamente');
-                    closeModal('editProfileModal');
-                    loadProfile();
-                } catch (err) {
-                    alert('Error: ' + err.message);
+            const form =
+                document.getElementById(
+                    'editProfileForm'
+                );
+
+            form.addEventListener(
+                'submit',
+                async function (e) {
+                    e.preventDefault();
+
+                    const submitButton =
+                        form.querySelector(
+                            'button[type="submit"]'
+                        );
+
+                    const originalText =
+                        submitButton.innerHTML;
+
+                    submitButton.disabled = true;
+                    submitButton.innerHTML =
+                        '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                    try {
+                        const formData =
+                            new FormData(form);
+
+                        const response =
+                            await updateLawyerProfileFormData(
+                                formData
+                            );
+
+                        // Actualizar nombre del usuario
+                        // que usa el frontend en varios lugares.
+                        const name =
+                            formData.get('name');
+
+                        if (name) {
+                            localStorage.setItem(
+                                'bogaya_name',
+                                name
+                            );
+                        }
+
+                        alert(
+                            '✅ Perfil actualizado correctamente'
+                        );
+
+                        closeModal(
+                            'editProfileModal'
+                        );
+
+                        await loadProfile();
+
+                    } catch (err) {
+                        alert(
+                            'Error: ' +
+                            err.message
+                        );
+
+                        submitButton.disabled = false;
+                        submitButton.innerHTML =
+                            originalText;
+                    }
                 }
-            });
-        });
-    } else {
-        // Cliente
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'editProfileModal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width:500px;">
-                <h2><i class="fas fa-edit"></i> Editar perfil</h2>
-                <label>Nombre completo</label>
-                <input type="text" id="edit-name" value="${localStorage.getItem('bogaya_name') || ''}">
-                <label>Email</label>
-                <input type="email" id="edit-email" value="">
-                <label>Teléfono</label>
-                <input type="text" id="edit-phone" value="">
-                <div class="btn-group">
-                    <button class="btn-primary" onclick="saveClientProfile()">Guardar</button>
-                    <button class="btn-secondary" onclick="closeModal('editProfileModal')">Cancelar</button>
+            );
+
+        } catch (e) {
+            alert(
+                'No se pudo cargar el perfil: ' +
+                e.message
+            );
+        }
+
+        return;
+    }
+
+    // ========================================================
+    // CLIENTE
+    // ========================================================
+
+    if (role === 'client') {
+
+        // ==========================================
+        // CLIENTE
+        // ==========================================
+
+        try {
+
+            const response =
+                await getUserProfile();
+
+            const p =
+                response.success
+                    ? response.data
+                    : {};
+
+            const modal =
+                document.createElement('div');
+
+            modal.className = 'modal';
+            modal.id = 'editProfileModal';
+
+            modal.innerHTML = `
+                <div class="modal-content"
+                    style="max-width:500px;">
+
+                    <h2>
+                        <i class="fas fa-edit"></i>
+                        Editar perfil
+                    </h2>
+
+                    <label>
+                        Nombre completo
+                    </label>
+
+                    <input
+                        type="text"
+                        id="edit-name"
+                        value="${p.name || ''}"
+                        required
+                    >
+
+                    <label>
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="edit-email"
+                        value="${p.email || ''}"
+                        required
+                    >
+
+                    <label>
+                        Teléfono
+                    </label>
+
+                    <input
+                        type="text"
+                        id="edit-phone"
+                        value="${p.phone || ''}"
+                    >
+
+                    <div class="btn-group">
+
+                        <button
+                            class="btn-primary"
+                            onclick="saveClientProfile()"
+                        >
+                            <i class="fas fa-save"></i>
+                            Guardar
+                        </button>
+
+                        <button
+                            class="btn-secondary"
+                            onclick="closeModal('editProfileModal')"
+                        >
+                            Cancelar
+                        </button>
+
+                    </div>
+
                 </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+            `;
+
+            document.body.appendChild(modal);
+
+        } catch (e) {
+
+            alert(
+                'No se pudo cargar el perfil: ' +
+                e.message
+            );
+        }
+
     }
 }
 
 async function saveClientProfile() {
+    const name =
+        document.getElementById(
+            'edit-name'
+        ).value.trim();
+
+    const email =
+        document.getElementById(
+            'edit-email'
+        ).value.trim();
+
+    const phone =
+        document.getElementById(
+            'edit-phone'
+        ).value.trim();
+
+    if (!name) {
+        alert(
+            'El nombre es obligatorio.'
+        );
+        return;
+    }
+
+    if (!email) {
+        alert(
+            'El email es obligatorio.'
+        );
+        return;
+    }
+
     const data = {
-        name: document.getElementById('edit-name').value,
-        email: document.getElementById('edit-email').value,
-        phone: document.getElementById('edit-phone').value
+        name,
+        email,
+        phone
     };
+
     try {
         await updateUserProfile(data);
-        localStorage.setItem('bogaya_name', data.name);
-        alert('✅ Perfil actualizado');
-        closeModal('editProfileModal');
-        loadProfile();
+
+        // El frontend usa este valor en
+        // el encabezado/perfil.
+        localStorage.setItem(
+            'bogaya_name',
+            name
+        );
+
+        alert(
+            '✅ Perfil actualizado'
+        );
+
+        closeModal(
+            'editProfileModal'
+        );
+
+        await loadProfile();
+
     } catch (e) {
-        alert('Error: ' + e.message);
+        alert(
+            'Error: ' +
+            e.message
+        );
     }
 }
 
@@ -1232,6 +1659,7 @@ window.loadAdminLawyers = async function (container) {
                 <h3>${l.name}</h3>
                 <div>
                     <span class="badge ${l.verified ? 'verified' : 'pending'}">${l.verified ? '✅ Matrícula verificada' : '⏳ Matrícula pendiente'}</span>
+                    <span class="badge ${l.email_verified ? 'email_verified' : 'email_pending'}">${l.email_verified ? '✅ Email verificado' : '⏳ Email pendiente'}</span>
                 </div>
             </div>
             <div class="card-body">
@@ -1250,6 +1678,16 @@ window.loadAdminLawyers = async function (container) {
                         <i class="fas fa-times"></i> Desverificar
                     </button>
                 `}
+                ${!l.email_verified ? `
+                    <button
+                        class="btn-primary"
+                        onclick="window.verifyEmailAdmin(${l.id})"
+                    >
+                        <i class="fas fa-envelope"></i>
+                        Verificar email
+                    </button>
+                ` : ''}
+                
                 <button class="btn-secondary" onclick="window.showResetPasswordModal(${l.id})">
                     <i class="fas fa-key"></i> Resetear password
                 </button>
@@ -1463,24 +1901,67 @@ window.loadAdminStats = async function (container) {
 // ============================================================
 
 window.verifyMatricula = async function (userId, verified) {
-    if (!confirm(verified ? '¿Verificar la matrícula de este abogado?' : '¿Quitar verificación de matrícula?')) return;
+
+    const pregunta = verified
+        ? '¿Verificar la matrícula de este abogado?'
+        : '¿Quitar la verificación de matrícula?';
+
+    if (!confirm(pregunta)) {
+        return;
+    }
+
     try {
-        await window.verifyMatricula(userId, verified);
-        alert(verified ? '✅ Matrícula verificada' : 'Verificación eliminada');
-        window.loadAdminPanel();
+
+        await window.adminVerifyMatricula(
+            userId,
+            verified
+        );
+
+        alert(
+            verified
+                ? '✅ Matrícula verificada'
+                : '✅ Verificación de matrícula eliminada'
+        );
+
+        await window.loadAdminPanel();
+
     } catch (e) {
-        alert('Error: ' + e.message);
+
+        alert(
+            'Error: ' +
+            e.message
+        );
+
     }
 };
 
 window.verifyEmailAdmin = async function (userId) {
-    if (!confirm('¿Verificar el email de este usuario?')) return;
+
+    if (!confirm(
+        '¿Verificar el email de este usuario?'
+    )) {
+        return;
+    }
+
     try {
-        await window.verifyEmailAdmin(userId);
-        alert('✅ Email verificado');
-        window.loadAdminPanel();
+
+        await window.adminVerifyEmail(
+            userId
+        );
+
+        alert(
+            '✅ Email verificado'
+        );
+
+        await window.loadAdminPanel();
+
     } catch (e) {
-        alert('Error: ' + e.message);
+
+        alert(
+            'Error: ' +
+            e.message
+        );
+
     }
 };
 

@@ -36,32 +36,6 @@ class ApiProposalController {
         }
     }
 
-    public function getByCase($caseId) {
-        $userId = Auth::getUserId();
-        if (!$userId) Response::error('No autenticado', 401);
-
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT client_id FROM cases WHERE id = ?");
-        $stmt->execute([$caseId]);
-        $case = $stmt->fetch();
-        if (!$case) Response::error('Caso no encontrado', 404);
-        if ($case['client_id'] != $userId && Auth::getUserRole() !== 'admin') {
-            Response::error('No autorizado', 403);
-        }
-
-        $stmt = $db->prepare("SELECT p.*, u.name as lawyer_name, u.email, 
-                                     CASE WHEN lp.mostrar_telefono = 1 THEN u.phone ELSE NULL END as phone,
-                                     lp.plan 
-                              FROM proposals p 
-                              JOIN users u ON p.lawyer_id = u.id 
-                              JOIN lawyer_profiles lp ON u.id = lp.user_id 
-                              WHERE p.case_id = ? 
-                              ORDER BY p.created_at DESC");
-        $stmt->execute([$caseId]);
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        Response::success($data);
-    }
-
     public function getByLawyer() {
         $userId = Auth::getUserId();
         if (!$userId) Response::error('No autenticado', 401);
@@ -116,5 +90,119 @@ class ApiProposalController {
 
         Response::success(['message' => 'Estado actualizado']);
     }
+
+    public function getByCase($caseId) {
+            $userId = Auth::getUserId();
+
+            if (!$userId) {
+                Response::error(
+                    'No autenticado',
+                    401
+                );
+            }
+
+            $role = Auth::getUserRole();
+
+            $db =
+                Database::getInstance()
+                ->getConnection();
+
+            // Buscar el caso.
+            $stmt = $db->prepare("
+                SELECT
+                    id,
+                    client_id,
+                    estado
+                FROM cases
+                WHERE id = ?
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                $caseId
+            ]);
+
+            $case =
+                $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$case) {
+                Response::error(
+                    'Caso no encontrado',
+                    404
+                );
+            }
+
+            // Solo el dueño o admin puede ver
+            // las propuestas.
+            if (
+                (int)$case['client_id'] !== (int)$userId &&
+                $role !== 'admin'
+            ) {
+                Response::error(
+                    'No autorizado',
+                    403
+                );
+            }
+
+            $stmt = $db->prepare("
+                SELECT
+                    p.id,
+                    p.case_id,
+                    p.lawyer_id,
+                    p.presupuesto,
+                    p.mensaje,
+                    p.estado,
+                    p.created_at,
+
+                    u.name AS lawyer_name,
+                    u.email AS lawyer_email,
+                    u.foto AS lawyer_foto,
+                    u.email_verified,
+
+                    CASE
+                        WHEN lp.mostrar_telefono = 1
+                        THEN u.phone
+                        ELSE NULL
+                    END AS phone,
+
+                    lp.matricula,
+                    lp.provincia,
+                    lp.ciudad,
+                    lp.verified,
+                    lp.plan_type
+
+                FROM proposals p
+
+                JOIN users u
+                    ON p.lawyer_id = u.id
+
+                JOIN lawyer_profiles lp
+                    ON u.id = lp.user_id
+
+                WHERE p.case_id = ?
+
+                ORDER BY
+                    CASE
+                        WHEN p.estado = 'pendiente'
+                        THEN 1
+                        ELSE 2
+                    END,
+                    p.created_at DESC
+            ");
+
+            $stmt->execute([
+                $caseId
+            ]);
+
+            $data =
+                $stmt->fetchAll(
+                    PDO::FETCH_ASSOC
+                );
+
+            Response::success(
+                $data
+            );
+    }
+    
 }
 ?>

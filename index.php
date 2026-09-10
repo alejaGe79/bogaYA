@@ -8,6 +8,7 @@ require_once __DIR__ . '/core/Router.php';
 
 $router = new Router();
 
+
 // ========== AUTENTICACIÓN ==========
 $router->add('POST', '/api/auth/register', 'ApiAuthController@register');
 $router->add('POST', '/api/auth/login', 'ApiAuthController@login');
@@ -16,12 +17,17 @@ $router->add('POST', '/api/auth/verify-email', 'ApiAuthController@verifyEmail');
 $router->add('POST', '/api/auth/resend-verification', 'ApiAuthController@resendVerification');
 
 // ========== USUARIOS ==========
+//$router->add('POST', '/api/users/profile', 'ApiUserController@updateProfile');
+//$router->add('GET', '/api/users/{id}', 'ApiUserController@get');
+$router->add('GET', '/api/users/profile', 'ApiUserController@getProfile');
 $router->add('PUT', '/api/users/profile', 'ApiUserController@updateProfile');
+
 
 // ========== ABOGADOS ==========
 $router->add('GET', '/api/lawyers', 'ApiLawyerController@list');
 $router->add('GET', '/api/lawyers/{id}', 'ApiLawyerController@get');
-$router->add('PUT', '/api/lawyers/profile', 'ApiLawyerController@updateProfile');
+$router->add('POST', '/api/lawyers/profile', 'ApiLawyerController@updateProfile');
+
 
 // ========== CASOS ==========
 $router->add('POST', '/api/cases', 'ApiCaseController@create');
@@ -54,6 +60,7 @@ $router->add('PUT', '/api/proposals/{id}/status', 'ApiProposalController@updateS
 // ========== MENSAJES ==========
 $router->add('POST', '/api/messages', 'ApiMessageController@send');
 $router->add('GET', '/api/messages/{userId}', 'ApiMessageController@getConversation');
+$router->add('GET', '/api/messages','ApiMessageController@conversations');
 
 // ========== PAGOS ==========
 $router->add('POST', '/api/payments/create-preference', 'ApiPaymentController@createPreference');

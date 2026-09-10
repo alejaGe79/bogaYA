@@ -49,8 +49,30 @@ window.showLoginModal = function () {
                     <option value="lawyer">Abogado</option>
                 </select>
                 <div id="reg-specialties-container" style="display:none; margin-top:8px;">
-                    <label style="font-size:13px; color:#64748b;">Especialidades (separadas por coma)</label>
+                    <label >Especialidades (separadas por coma)</label>
                     <input type="text" id="reg-especialidades" placeholder="Ej: Laboral, Civil, Penal">
+                    <label style="font-size:13px; color:#64748b;">Especialidades</label>
+                    <select
+                        name="especialidades[]"
+                        multiple
+                        size="7"
+                        id="reg-especialidades"
+                    >
+                        <option value="Laboral">Laboral</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Penal">Penal</option>
+                        <option value="Familia">Familia</option>
+                        <option value="Comercial">Comercial</option>
+                        <option value="Administrativo">Administrativo</option>
+                        <option value="Inmobiliario">Inmobiliario</option>
+                        <option value="Tributario">Tributario</option>
+                        <option value="Ambiental">Ambiental</option>
+                        <option value="Sucesiones">Sucesiones</option>
+                    </select>
+                    <small>
+                        Mantené presionado Ctrl o seleccioná
+                        varias opciones en el celular.
+                    </small>
                 </div>
                 <button class="btn-primary btn-block" onclick="window.doRegister()" style="margin-top:8px;">Registrarse</button>
                 <button class="btn-secondary btn-block" onclick="window.closeModal('loginModal')" style="margin-top:8px;">Cerrar</button>

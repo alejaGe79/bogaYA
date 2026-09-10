@@ -30,39 +30,233 @@ class ApiCaseController {
         Response::success(['id' => $id, 'message' => 'Caso publicado correctamente']);
     }
 
-    public function list() {
-        $db = Database::getInstance()->getConnection();
-        $estado = $_GET['estado'] ?? 'abierto';
-        $area = $_GET['area'] ?? '';
-        $userId = Auth::getUserId();
-        $role = Auth::getUserRole();
+    public function list()
+{
+    $userId = Auth::getUserId();
+    $role = Auth::getUserRole();
 
-        $sql = "SELECT c.*, u.name as client_name, u.phone as client_phone,
-                       (SELECT COUNT(*) FROM proposals WHERE case_id = c.id) as proposals_count
-                FROM cases c 
-                JOIN users u ON c.client_id = u.id ";
-
-        $params = [];
-        if ($role === 'client' && $userId) {
-            $sql .= " WHERE c.client_id = ?";
-            $params[] = $userId;
-        } else {
-            $sql .= " WHERE c.estado = 'abierto'";
-            $sql .= " AND DATE_ADD(c.created_at, INTERVAL c.vigencia_dias DAY) > NOW()";
-        }
-
-        if ($area) {
-            $sql .= " AND c.area_legal LIKE ?";
-            $params[] = "%$area%";
-        }
-
-        $sql .= " ORDER BY c.created_at DESC";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        Response::success($data);
+    if (!$userId) {
+        Response::error(
+            'No autenticado',
+            401
+        );
     }
+
+    $db = Database::getInstance()->getConnection();
+
+    $estado = $_GET['estado'] ?? 'abierto';
+    $area = trim($_GET['area'] ?? '');
+
+    // =========================================
+    // CLIENTE
+    // =========================================
+
+    if ($role === 'client') {
+
+        $sql = "
+            SELECT
+                c.*,
+                u.name AS client_name,
+                u.phone AS client_phone,
+                (
+                    SELECT COUNT(*)
+                    FROM proposals
+                    WHERE case_id = c.id
+                ) AS proposals_count
+
+            FROM cases c
+
+            JOIN users u
+                ON c.client_id = u.id
+
+            WHERE c.client_id = ?
+        ";
+
+        $params = [
+            $userId
+        ];
+
+        if ($area !== '') {
+
+            $sql .= "
+                AND c.area_legal LIKE ?
+            ";
+
+            $params[] =
+                '%' . $area . '%';
+        }
+
+        $sql .= "
+            ORDER BY c.created_at DESC
+        ";
+
+        $stmt =
+            $db->prepare($sql);
+
+        $stmt->execute($params);
+
+        Response::success(
+            $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            )
+        );
+    }
+
+    // =========================================
+    // ABOGADO
+    // =========================================
+
+    if ($role === 'lawyer') {
+
+        // Verificación del propio abogado
+        $stmt = $db->prepare("
+            SELECT
+                u.email_verified,
+                lp.verified,
+                lp.matricula
+            FROM users u
+            JOIN lawyer_profiles lp
+                ON u.id = lp.user_id
+            WHERE u.id = ?
+              AND u.role = 'lawyer'
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            $userId
+        ]);
+
+        $lawyer = $stmt->fetch(
+            PDO::FETCH_ASSOC
+        );
+
+        if (!$lawyer) {
+
+            Response::error(
+                'Perfil de abogado no encontrado',
+                404
+            );
+        }
+
+        if (
+            (int)$lawyer['email_verified'] !== 1 ||
+            (int)$lawyer['verified'] !== 1 ||
+            trim($lawyer['matricula']) === ''
+        ) {
+
+            Response::error(
+                'Tu cuenta debe tener email y matrícula verificados para acceder a los casos.',
+                403
+            );
+        }
+
+        // =====================================
+        // CASOS DISPONIBLES
+        // =====================================
+
+        $sql = "
+            SELECT
+                c.*,
+                u.name AS client_name,
+
+                (
+                    SELECT COUNT(*)
+                    FROM proposals
+                    WHERE case_id = c.id
+                ) AS proposals_count
+
+            FROM cases c
+
+            JOIN users u
+                ON c.client_id = u.id
+
+            WHERE c.estado = 'abierto'
+
+              AND DATE_ADD(
+                    c.created_at,
+                    INTERVAL c.vigencia_dias DAY
+                  ) > NOW()
+
+              AND u.email_verified = 1
+
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM proposals p
+                    WHERE p.case_id = c.id
+                      AND p.lawyer_id = ?
+              )
+        ";
+
+        $params = [
+            $userId
+        ];
+
+        if ($area !== '') {
+
+            $sql .= "
+                AND c.area_legal LIKE ?
+            ";
+
+            $params[] =
+                '%' . $area . '%';
+        }
+
+        $sql .= "
+            ORDER BY c.created_at DESC
+        ";
+
+        $stmt =
+            $db->prepare($sql);
+
+        $stmt->execute($params);
+
+        Response::success(
+            $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            )
+        );
+    }
+
+    // =========================================
+    // ADMIN
+    // =========================================
+
+    if ($role === 'admin') {
+
+        $sql = "
+            SELECT
+                c.*,
+                u.name AS client_name,
+
+                (
+                    SELECT COUNT(*)
+                    FROM proposals
+                    WHERE case_id = c.id
+                ) AS proposals_count
+
+            FROM cases c
+
+            JOIN users u
+                ON c.client_id = u.id
+
+            ORDER BY c.created_at DESC
+        ";
+
+        $stmt =
+            $db->query($sql);
+
+        Response::success(
+            $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            )
+        );
+    }
+
+    Response::error(
+        'Rol no válido',
+        403
+    );
+}
 
     public function get($id) {
         $db = Database::getInstance()->getConnection();

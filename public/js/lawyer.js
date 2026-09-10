@@ -24,6 +24,28 @@ function lawyerEditProfile() {
                     <input type="text" id="edit-ciudad" placeholder="Ciudad">
                     <label>Especialidad:</label>
                     <input type="text" id="edit-especialidad" placeholder="Ej: laboral, civil, penal">
+                    <select
+                        name="especialidades[]"
+                        multiple
+                        size="7"
+                        id="edit-especialidad"
+                    >
+                        <option value="Laboral">Laboral</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Penal">Penal</option>
+                        <option value="Familia">Familia</option>
+                        <option value="Comercial">Comercial</option>
+                        <option value="Administrativo">Administrativo</option>
+                        <option value="Inmobiliario">Inmobiliario</option>
+                        <option value="Tributario">Tributario</option>
+                        <option value="Ambiental">Ambiental</option>
+                        <option value="Sucesiones">Sucesiones</option>
+                    </select>
+
+                    <small>
+                        Mantené presionado Ctrl o seleccioná
+                        varias opciones en el celular.
+                    </small>
                     <label>Biografía:</label>
                     <textarea id="edit-bio" rows="3" placeholder="Tu experiencia y especialización"></textarea>
                     <label>Costo de consulta (ARS):</label>

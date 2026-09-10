@@ -18,7 +18,8 @@ class ApiReviewController {
 
         $db = Database::getInstance()->getConnection();
 
-        $stmt = $db->prepare("SELECT estado, client_id FROM cases WHERE id = ?");
+        //$stmt = $db->prepare("SELECT estado, client_id FROM cases WHERE id = ?");
+        $stmt = $db->prepare("SELECT  c.estado, c.client_id, u.name AS client_name FROM cases c JOIN users u ON c.client_id = u.id WHERE c.id = ?");
         $stmt->execute([$caseId]);
         $case = $stmt->fetch();
         if (!$case || $case['estado'] !== 'cerrado') {
@@ -35,6 +36,30 @@ class ApiReviewController {
             $stmt->execute([$caseId, $userId]);
             if (!$stmt->fetch()) {
                 Response::error('No estás asignado a este caso', 403);
+            }
+        }
+
+        if ($role === 'client') {
+
+            $stmt = $db->prepare("
+                SELECT id
+                FROM proposals
+                WHERE case_id = ?
+                AND lawyer_id = ?
+                AND estado = 'aceptada'
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                $caseId,
+                $lawyerId
+            ]);
+
+            if (!$stmt->fetch()) {
+                Response::error(
+                    'Ese abogado no está asignado a este caso',
+                    403
+                );
             }
         }
 
