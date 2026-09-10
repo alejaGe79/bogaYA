@@ -31,232 +31,232 @@ class ApiCaseController {
     }
 
     public function list()
-{
-    $userId = Auth::getUserId();
-    $role = Auth::getUserRole();
+    {
+        $userId = Auth::getUserId();
+        $role = Auth::getUserRole();
 
-    if (!$userId) {
+        if (!$userId) {
+            Response::error(
+                'No autenticado',
+                401
+            );
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        $estado = $_GET['estado'] ?? 'abierto';
+        $area = trim($_GET['area'] ?? '');
+
+        // =========================================
+        // CLIENTE
+        // =========================================
+
+        if ($role === 'client') {
+
+            $sql = "
+                SELECT
+                    c.*,
+                    u.name AS client_name,
+                    u.phone AS client_phone,
+                    (
+                        SELECT COUNT(*)
+                        FROM proposals
+                        WHERE case_id = c.id
+                    ) AS proposals_count
+
+                FROM cases c
+
+                JOIN users u
+                    ON c.client_id = u.id
+
+                WHERE c.client_id = ?
+            ";
+
+            $params = [
+                $userId
+            ];
+
+            if ($area !== '') {
+
+                $sql .= "
+                    AND c.area_legal LIKE ?
+                ";
+
+                $params[] =
+                    '%' . $area . '%';
+            }
+
+            $sql .= "
+                ORDER BY c.created_at DESC
+            ";
+
+            $stmt =
+                $db->prepare($sql);
+
+            $stmt->execute($params);
+
+            Response::success(
+                $stmt->fetchAll(
+                    PDO::FETCH_ASSOC
+                )
+            );
+        }
+
+        // =========================================
+        // ABOGADO
+        // =========================================
+
+        if ($role === 'lawyer') {
+
+            // Verificación del propio abogado
+            $stmt = $db->prepare("
+                SELECT
+                    u.email_verified,
+                    lp.verified,
+                    lp.matricula
+                FROM users u
+                JOIN lawyer_profiles lp
+                    ON u.id = lp.user_id
+                WHERE u.id = ?
+                AND u.role = 'lawyer'
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                $userId
+            ]);
+
+            $lawyer = $stmt->fetch(
+                PDO::FETCH_ASSOC
+            );
+
+            if (!$lawyer) {
+
+                Response::error(
+                    'Perfil de abogado no encontrado',
+                    404
+                );
+            }
+
+            if (
+                (int)$lawyer['email_verified'] !== 1 ||
+                (int)$lawyer['verified'] !== 1 ||
+                trim($lawyer['matricula']) === ''
+            ) {
+
+                Response::error(
+                    'Tu cuenta debe tener email y matrícula verificados para acceder a los casos.',
+                    403
+                );
+            }
+
+            // =====================================
+            // CASOS DISPONIBLES
+            // =====================================
+
+            $sql = "
+                SELECT
+                    c.*,
+                    u.name AS client_name,
+
+                    (
+                        SELECT COUNT(*)
+                        FROM proposals
+                        WHERE case_id = c.id
+                    ) AS proposals_count
+
+                FROM cases c
+
+                JOIN users u
+                    ON c.client_id = u.id
+
+                WHERE c.estado = 'abierto'
+
+                AND DATE_ADD(
+                        c.created_at,
+                        INTERVAL c.vigencia_dias DAY
+                    ) > NOW()
+
+                AND u.email_verified = 1
+
+                AND NOT EXISTS (
+                        SELECT 1
+                        FROM proposals p
+                        WHERE p.case_id = c.id
+                        AND p.lawyer_id = ?
+                )
+            ";
+
+            $params = [
+                $userId
+            ];
+
+            if ($area !== '') {
+
+                $sql .= "
+                    AND c.area_legal LIKE ?
+                ";
+
+                $params[] =
+                    '%' . $area . '%';
+            }
+
+            $sql .= "
+                ORDER BY c.created_at DESC
+            ";
+
+            $stmt =
+                $db->prepare($sql);
+
+            $stmt->execute($params);
+
+            Response::success(
+                $stmt->fetchAll(
+                    PDO::FETCH_ASSOC
+                )
+            );
+        }
+
+        // =========================================
+        // ADMIN
+        // =========================================
+
+        if ($role === 'admin') {
+
+            $sql = "
+                SELECT
+                    c.*,
+                    u.name AS client_name,
+
+                    (
+                        SELECT COUNT(*)
+                        FROM proposals
+                        WHERE case_id = c.id
+                    ) AS proposals_count
+
+                FROM cases c
+
+                JOIN users u
+                    ON c.client_id = u.id
+
+                ORDER BY c.created_at DESC
+            ";
+
+            $stmt =
+                $db->query($sql);
+
+            Response::success(
+                $stmt->fetchAll(
+                    PDO::FETCH_ASSOC
+                )
+            );
+        }
+
         Response::error(
-            'No autenticado',
-            401
+            'Rol no válido',
+            403
         );
     }
-
-    $db = Database::getInstance()->getConnection();
-
-    $estado = $_GET['estado'] ?? 'abierto';
-    $area = trim($_GET['area'] ?? '');
-
-    // =========================================
-    // CLIENTE
-    // =========================================
-
-    if ($role === 'client') {
-
-        $sql = "
-            SELECT
-                c.*,
-                u.name AS client_name,
-                u.phone AS client_phone,
-                (
-                    SELECT COUNT(*)
-                    FROM proposals
-                    WHERE case_id = c.id
-                ) AS proposals_count
-
-            FROM cases c
-
-            JOIN users u
-                ON c.client_id = u.id
-
-            WHERE c.client_id = ?
-        ";
-
-        $params = [
-            $userId
-        ];
-
-        if ($area !== '') {
-
-            $sql .= "
-                AND c.area_legal LIKE ?
-            ";
-
-            $params[] =
-                '%' . $area . '%';
-        }
-
-        $sql .= "
-            ORDER BY c.created_at DESC
-        ";
-
-        $stmt =
-            $db->prepare($sql);
-
-        $stmt->execute($params);
-
-        Response::success(
-            $stmt->fetchAll(
-                PDO::FETCH_ASSOC
-            )
-        );
-    }
-
-    // =========================================
-    // ABOGADO
-    // =========================================
-
-    if ($role === 'lawyer') {
-
-        // Verificación del propio abogado
-        $stmt = $db->prepare("
-            SELECT
-                u.email_verified,
-                lp.verified,
-                lp.matricula
-            FROM users u
-            JOIN lawyer_profiles lp
-                ON u.id = lp.user_id
-            WHERE u.id = ?
-              AND u.role = 'lawyer'
-            LIMIT 1
-        ");
-
-        $stmt->execute([
-            $userId
-        ]);
-
-        $lawyer = $stmt->fetch(
-            PDO::FETCH_ASSOC
-        );
-
-        if (!$lawyer) {
-
-            Response::error(
-                'Perfil de abogado no encontrado',
-                404
-            );
-        }
-
-        if (
-            (int)$lawyer['email_verified'] !== 1 ||
-            (int)$lawyer['verified'] !== 1 ||
-            trim($lawyer['matricula']) === ''
-        ) {
-
-            Response::error(
-                'Tu cuenta debe tener email y matrícula verificados para acceder a los casos.',
-                403
-            );
-        }
-
-        // =====================================
-        // CASOS DISPONIBLES
-        // =====================================
-
-        $sql = "
-            SELECT
-                c.*,
-                u.name AS client_name,
-
-                (
-                    SELECT COUNT(*)
-                    FROM proposals
-                    WHERE case_id = c.id
-                ) AS proposals_count
-
-            FROM cases c
-
-            JOIN users u
-                ON c.client_id = u.id
-
-            WHERE c.estado = 'abierto'
-
-              AND DATE_ADD(
-                    c.created_at,
-                    INTERVAL c.vigencia_dias DAY
-                  ) > NOW()
-
-              AND u.email_verified = 1
-
-              AND NOT EXISTS (
-                    SELECT 1
-                    FROM proposals p
-                    WHERE p.case_id = c.id
-                      AND p.lawyer_id = ?
-              )
-        ";
-
-        $params = [
-            $userId
-        ];
-
-        if ($area !== '') {
-
-            $sql .= "
-                AND c.area_legal LIKE ?
-            ";
-
-            $params[] =
-                '%' . $area . '%';
-        }
-
-        $sql .= "
-            ORDER BY c.created_at DESC
-        ";
-
-        $stmt =
-            $db->prepare($sql);
-
-        $stmt->execute($params);
-
-        Response::success(
-            $stmt->fetchAll(
-                PDO::FETCH_ASSOC
-            )
-        );
-    }
-
-    // =========================================
-    // ADMIN
-    // =========================================
-
-    if ($role === 'admin') {
-
-        $sql = "
-            SELECT
-                c.*,
-                u.name AS client_name,
-
-                (
-                    SELECT COUNT(*)
-                    FROM proposals
-                    WHERE case_id = c.id
-                ) AS proposals_count
-
-            FROM cases c
-
-            JOIN users u
-                ON c.client_id = u.id
-
-            ORDER BY c.created_at DESC
-        ";
-
-        $stmt =
-            $db->query($sql);
-
-        Response::success(
-            $stmt->fetchAll(
-                PDO::FETCH_ASSOC
-            )
-        );
-    }
-
-    Response::error(
-        'Rol no válido',
-        403
-    );
-}
 
     public function get($id) {
         $db = Database::getInstance()->getConnection();
@@ -294,38 +294,6 @@ class ApiCaseController {
             $id
         ]);
         Response::success(['message' => 'Caso actualizado']);
-    }
-
-    public function close($id) {
-        $userId = Auth::getUserId();
-        if (!$userId) Response::error('No autenticado', 401);
-
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT client_id FROM cases WHERE id = ?");
-        $stmt->execute([$id]);
-        $case = $stmt->fetch();
-        if (!$case) Response::error('Caso no encontrado', 404);
-
-        $role = Auth::getUserRole();
-        if ($case['client_id'] != $userId && $role !== 'admin') {
-            Response::error('No autorizado', 403);
-        }
-
-        $stmt = $db->prepare("UPDATE cases SET estado = 'cerrado', fecha_cierre = NOW() WHERE id = ?");
-        $stmt->execute([$id]);
-
-        $stmt = $db->prepare("SELECT lawyer_id FROM proposals WHERE case_id = ? AND estado = 'aceptada' LIMIT 1");
-        $stmt->execute([$id]);
-        $lawyerId = $stmt->fetchColumn();
-
-        if ($lawyerId) {
-            Notification::send($lawyerId, '📌 Caso cerrado', 'El caso ha sido cerrado. Deja tu reseña.');
-            Notification::send($case['client_id'], '📌 Caso cerrado', 'El caso ha sido cerrado. Deja tu reseña.');
-            Notification::saveNotification($lawyerId, 'case_closed', 'Caso cerrado', 'El caso ha sido cerrado. Deja tu reseña.', '/dashboard');
-            Notification::saveNotification($case['client_id'], 'case_closed', 'Caso cerrado', 'El caso ha sido cerrado. Deja tu reseña.', '/dashboard');
-        }
-
-        Response::success(['message' => 'Caso cerrado correctamente']);
     }
 
     public function getAcceptedCases() {
@@ -387,6 +355,191 @@ class ApiCaseController {
             mt_rand(0, 0x3fff) | 0x8000,
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
+    }
+
+    public function close($id)
+    {
+        $userId = Auth::getUserId();
+
+        if (!$userId) {
+            Response::error('No autenticado', 401);
+        }
+
+        $role = Auth::getUserRole();
+
+        $db = Database::getInstance()
+            ->getConnection();
+
+        // =========================================
+        // OBTENER CASO
+        // =========================================
+
+        $stmt = $db->prepare("
+            SELECT
+                id,
+                client_id,
+                estado
+            FROM cases
+            WHERE id = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([$id]);
+
+        $case = $stmt->fetch(
+            PDO::FETCH_ASSOC
+        );
+
+        if (!$case) {
+            Response::error(
+                'Caso no encontrado',
+                404
+            );
+        }
+
+        // =========================================
+        // CLIENTE
+        // =========================================
+
+        if ($role === 'client') {
+
+            if (
+                (int)$case['client_id'] !==
+                (int)$userId
+            ) {
+                Response::error(
+                    'No autorizado',
+                    403
+                );
+            }
+        }
+
+        // =========================================
+        // ABOGADO
+        // =========================================
+
+        elseif ($role === 'lawyer') {
+
+            $stmt = $db->prepare("
+                SELECT id
+                FROM proposals
+                WHERE case_id = ?
+                AND lawyer_id = ?
+                AND estado = 'aceptada'
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                $id,
+                $userId
+            ]);
+
+            if (!$stmt->fetch()) {
+                Response::error(
+                    'Solo podés cerrar casos que te hayan sido asignados',
+                    403
+                );
+            }
+        }
+
+        // =========================================
+        // ADMIN
+        // =========================================
+
+        elseif ($role !== 'admin') {
+
+            Response::error(
+                'No autorizado',
+                403
+            );
+        }
+
+        if ($case['estado'] === 'cerrado') {
+            Response::error(
+                'El caso ya está cerrado',
+                400
+            );
+        }
+
+        // =========================================
+        // CERRAR
+        // =========================================
+
+        $stmt = $db->prepare("
+            UPDATE cases
+            SET
+                estado = 'cerrado',
+                fecha_cierre = NOW()
+            WHERE id = ?
+        ");
+
+        $stmt->execute([$id]);
+
+        // =========================================
+        // ABOGADO ASIGNADO
+        // =========================================
+
+        $stmt = $db->prepare("
+            SELECT lawyer_id
+            FROM proposals
+            WHERE case_id = ?
+            AND estado = 'aceptada'
+            LIMIT 1
+        ");
+
+        $stmt->execute([$id]);
+
+        $lawyerId = $stmt->fetchColumn();
+
+        // =========================================
+        // NOTIFICACIONES
+        // =========================================
+
+        if ($role === 'lawyer') {
+
+            // Si cerró el abogado:
+            // avisamos AL CLIENTE.
+            Notification::send(
+                $case['client_id'],
+                '📌 Caso cerrado',
+                'El abogado cerró el caso. Ahora podés dejar una reseña.'
+            );
+
+            Notification::saveNotification(
+                $case['client_id'],
+                'case_closed',
+                '📌 Caso cerrado',
+                'El abogado cerró el caso. Ahora podés dejar una reseña.',
+                '/dashboard'
+            );
+
+        } elseif ($role === 'client') {
+
+            // Si cerró el cliente:
+            // avisamos al abogado,
+            // pero NO hablamos de la reseña para él.
+
+            if ($lawyerId) {
+
+                Notification::send(
+                    $lawyerId,
+                    '📌 Caso cerrado',
+                    'El cliente cerró el caso.'
+                );
+
+                Notification::saveNotification(
+                    $lawyerId,
+                    'case_closed',
+                    '📌 Caso cerrado',
+                    'El cliente cerró el caso.',
+                    '/dashboard-lawyer'
+                );
+            }
+        }
+
+        Response::success([
+            'message' => 'Caso cerrado correctamente'
+        ]);
     }
 }
 ?>

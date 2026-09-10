@@ -49,8 +49,7 @@ window.showLoginModal = function () {
                     <option value="lawyer">Abogado</option>
                 </select>
                 <div id="reg-specialties-container" style="display:none; margin-top:8px;">
-                    <label >Especialidades (separadas por coma)</label>
-                    <input type="text" id="reg-especialidades" placeholder="Ej: Laboral, Civil, Penal">
+                    
                     <label style="font-size:13px; color:#64748b;">Especialidades</label>
                     <select
                         name="especialidades[]"

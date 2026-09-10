@@ -255,9 +255,20 @@ window.renderLawyerCard = function (l, showPlan = false) {
             </div>
             ${recomendaciones ? `<div class="card-reviews"><p><strong>Recomendaciones:</strong></p>${recomendaciones}</div>` : ''}
             <div class="card-footer">
-                ${l.phone ? `<button class="btn-outline" onclick="window.contactLawyer(${l.id}, '${l.name}', '${l.phone}', '${l.email}')">
-                    <i class="fas fa-phone"></i> Contactar
-                </button>` : ''}
+                ${window.getRole() === 'client' ? `
+                    <button
+                        class="btn-outline"
+                        onclick='window.contactLawyer(
+                            ${l.id},
+                            ${JSON.stringify(l.name || '')},
+                            ${JSON.stringify(l.phone || '')},
+                            ${JSON.stringify(l.email || '')}
+                        )'
+                    >
+                        <i class="fas fa-comment-dots"></i>
+                        Contactar
+                    </button>
+                ` : ''}
                 ${!window.isLoggedIn() || window.getRole() === 'client' ? `
                     <button class="btn-primary" onclick="window.showAppointmentModal(${l.id})">
                         <i class="fas fa-calendar-plus"></i> Solicitar turno
@@ -364,7 +375,7 @@ window.loadDashboard = async function () {
                     ${c.fecha_cierre ? `<p><i class="fas fa-check-circle"></i> Cerrado: ${new Date(c.fecha_cierre).toLocaleDateString()}</p>` : ''}
                 </div>
                 <div class="card-footer">
-                    ${c.estado === 'abierto' ? `
+                    ${c.estado !== 'cerrado' ? `
                         <button class="btn-secondary" onclick="window.closeCase('${c.id}')">
                             <i class="fas fa-check"></i> Cerrar caso
                         </button>
@@ -455,13 +466,37 @@ window.rejectProposal = async function (proposalId, caseId) {
 };
 
 window.closeCase = async function (caseId) {
-    if (!confirm('¿Estás seguro que quieres cerrar este caso? Una vez cerrado, podrás dejar una reseña.')) return;
+
+    const role = window.getRole();
+
+    const mensaje = role === 'lawyer'
+        ? '¿Confirmás que el trabajo de este caso ya terminó y querés cerrarlo?'
+        : '¿Estás seguro que querés cerrar este caso? Una vez cerrado, el Cliente podrá dejar una reseña.';
+
+    if (!confirm(mensaje)) {
+        return;
+    }
+
     try {
+
         await window.closeCaseApi(caseId);
-        alert('✅ Caso cerrado correctamente');
-        window.loadDashboard();
+
+        alert(
+            '✅ Caso cerrado correctamente'
+        );
+
+        if (role === 'lawyer') {
+            await window.loadLawyerDashboard();
+        } else {
+            await window.loadDashboard();
+        }
+
     } catch (e) {
-        alert('Error: ' + e.message);
+
+        alert(
+            'Error: ' +
+            e.message
+        );
     }
 };
 
@@ -518,16 +553,28 @@ window.loadLawyerDashboard = async function () {
                     ${c.mensaje ? `<p><i class="fas fa-comment"></i> ${c.mensaje}</p>` : ''}
                 </div>
                 <div class="card-footer">
+
                     ${currentLawyerTab === 'vigentes' ? `
-                        <button class="btn-primary" onclick="window.showProposalModal('${c.id}')">
-                            <i class="fas fa-paper-plane"></i> Postularme
+                        <button
+                            class="btn-primary"
+                            onclick="window.showProposalModal('${c.id}')"
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                            Postularme
                         </button>
                     ` : ''}
-                    ${c.estado === 'cerrado' ? `
-                        <button class="btn-primary" onclick="window.showReviewModal('${c.id}')">
-                            <i class="fas fa-star"></i> Dejar reseña
+
+                    ${currentLawyerTab === 'aceptados' &&
+                c.estado !== 'cerrado' ? `
+                        <button
+                            class="btn-secondary"
+                            onclick="window.closeCase('${c.id}')"
+                        >
+                            <i class="fas fa-check-circle"></i>
+                            Cerrar caso
                         </button>
                     ` : ''}
+
                 </div>
             </div>
         `).join('');
@@ -2047,16 +2094,105 @@ window.deleteReview = async function (reviewId) {
 // ============================================================
 
 window.loadMessages = async function () {
-    const container = document.getElementById('messages-list');
-    if (!container) return;
-    container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando mensajes...</div>';
+
+    const container =
+        document.getElementById(
+            'messages-list'
+        );
+
+    if (!container) {
+        return;
+    }
 
     container.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-envelope"></i>
-            <p>Próximamente: sistema de mensajería completo.</p>
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando mensajes...
         </div>
     `;
+
+    try {
+
+        const response =
+            await getConversations();
+
+        if (
+            !response.success ||
+            !response.data.length
+        ) {
+
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>
+                        Todavía no tenés conversaciones.
+                    </p>
+                    <small>
+                        Podés contactar a un abogado desde el buscador.
+                    </small>
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            response.data.map(c => `
+                <button
+                    class="message-contact"
+                    onclick="window.openConversation(${c.id}, '${String(c.name).replace(/'/g, "\\'")}')"
+                >
+
+                    <div class="message-avatar">
+
+                        ${c.foto
+                    ? `
+                                    <img
+                                        src="${c.foto}"
+                                        alt="${c.name}"
+                                    >
+                                  `
+                    : `
+                                    <i class="fas fa-user"></i>
+                                  `
+                }
+
+                    </div>
+
+                    <div class="message-summary">
+
+                        <strong>
+                            ${c.name}
+                        </strong>
+
+                        <span>
+                            ${c.last_message ||
+                'Nueva conversación'
+                }
+                        </span>
+
+                    </div>
+
+                    ${Number(c.unread_count) > 0
+                    ? `
+                                <span class="message-unread">
+                                    ${c.unread_count}
+                                </span>
+                              `
+                    : ''
+                }
+
+                </button>
+            `).join('');
+
+    } catch (e) {
+
+        container.innerHTML = `
+            <p class="text-danger">
+                Error: ${e.message}
+            </p>
+        `;
+    }
 };
 
 // ============================================================

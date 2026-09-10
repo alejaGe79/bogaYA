@@ -128,19 +128,66 @@ class ApiAuthController {
     }
 
     private function sendVerificationEmail($email, $token, $name) {
-        $link = BASE_URL . '/public/verify.php?token=' . $token;
-        $subject = 'Verifica tu cuenta en BogaYA';
-        $message = "Hola $name,\n\n";
-        $message .= "Gracias por registrarte en BogaYA. Para activar tu cuenta, hacé clic en el siguiente enlace:\n\n";
-        $message .= $link . "\n\n";
-        $message .= "El enlace expira en 24 horas.\n\n";
-        $message .= "Si no solicitaste este registro, ignorá este mensaje.\n\n";
-        $message .= "Saludos,\nEl equipo de BogaYA";
+        $link =
+            BASE_URL .
+            '/public/verify.php?token=' .
+            $token;
 
-        $headers = "From: " . SMTP_FROM . "\r\n";
-        $headers .= "Reply-To: " . SMTP_FROM . "\r\n";
-        mail($email, $subject, $message, $headers);
+        $subject =
+            'Verifica tu cuenta en BogaYA';
+
+        $message =
+            "Hola $name,\n\n";
+
+        $message .=
+            "Gracias por registrarte en BogaYA.\n\n";
+
+        $message .=
+            "Para activar tu cuenta, ingresá al siguiente enlace:\n\n";
+
+        $message .=
+            $link . "\n\n";
+
+        $message .=
+            "El enlace expira en 24 horas.\n\n";
+
+        $message .=
+            "Saludos,\nEl equipo de BogaYA";
+
+        $headers =
+            "From: " .
+            SMTP_FROM .
+            "\r\n";
+
+        $headers .=
+            "Reply-To: " .
+            SMTP_FROM .
+            "\r\n";
+
+        // Evita que una advertencia de mail()
+        // rompa la respuesta JSON de la API.
+        return @mail(
+            $email,
+            $subject,
+            $message,
+            $headers
+        );
+        $emailSent =
+            $this->sendVerificationEmail(
+                $input['email'],
+                $token,
+                $input['name']
+            );
+
+        Response::success([
+            'message' =>
+                'Registro exitoso. Revisa tu email para verificar tu cuenta.',
+            'id' => $userId,
+            'verification_email_sent' => $emailSent
+        ]);
     }
+
+    
 
     public function registerPushToken() {
         $userId = Auth::getUserId();

@@ -4,6 +4,14 @@ class ApiReviewController {
     public function create() {
         $userId = Auth::getUserId();
         if (!$userId) Response::error('No autenticado', 401);
+        $role = Auth::getUserRole();
+
+        if ($role !== 'client') {
+            Response::error(
+                'Solo los clientes pueden dejar reseñas',
+                403
+            );
+        }
 
         $input = json_decode(file_get_contents('php://input'), true);
         $lawyerId = $input['lawyer_id'] ?? 0;
@@ -31,13 +39,13 @@ class ApiReviewController {
             Response::error('No eres el dueño de este caso', 403);
         }
 
-        if ($role === 'lawyer') {
-            $stmt = $db->prepare("SELECT id FROM proposals WHERE case_id = ? AND lawyer_id = ? AND estado = 'aceptada'");
-            $stmt->execute([$caseId, $userId]);
-            if (!$stmt->fetch()) {
-                Response::error('No estás asignado a este caso', 403);
-            }
-        }
+        //if ($role === 'lawyer') {
+        //    $stmt = $db->prepare("SELECT id FROM proposals WHERE case_id = ? AND lawyer_id = ? AND estado = 'aceptada'");
+        //    $stmt->execute([$caseId, $userId]);
+        //    if (!$stmt->fetch()) {
+        //        Response::error('No estás asignado a este caso', 403);
+        //    }
+        //}
 
         if ($role === 'client') {
 
