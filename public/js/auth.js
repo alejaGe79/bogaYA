@@ -115,7 +115,19 @@ window.doRegister = async function () {
     if (role === 'lawyer') {
         const espInput = document.getElementById('reg-especialidades');
         if (espInput) {
-            especialidades = espInput.value.split(',').map(s => s.trim()).filter(s => s);
+            const espInput =
+                document.getElementById(
+                    'reg-especialidades'
+                );
+
+            if (espInput) {
+                especialidades =
+                    Array.from(
+                        espInput.selectedOptions
+                    )
+                        .map(option => option.value)
+                        .filter(Boolean);
+            }
         }
     }
 

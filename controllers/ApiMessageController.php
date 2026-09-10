@@ -3,7 +3,7 @@
 class ApiMessageController
 {
     /**
-     * Enviar mensaje.
+     * Enviar mensaje entre cliente y abogado.
      */
     public function send()
     {
@@ -21,10 +21,18 @@ class ApiMessageController
             true
         );
 
+        if (!is_array($input)) {
+            Response::error(
+                'Datos inválidos',
+                400
+            );
+        }
+
         $receiverId = (int)($input['receiver_id'] ?? 0);
         $message = trim(
             $input['message'] ?? ''
         );
+
         $caseId = $input['case_id'] ?? null;
 
         if (!$receiverId) {
@@ -34,7 +42,9 @@ class ApiMessageController
             );
         }
 
-        if ($receiverId === (int)$senderId) {
+        if (
+            $receiverId === (int)$senderId
+        ) {
             Response::error(
                 'No podés enviarte mensajes a vos mismo',
                 400
@@ -59,12 +69,16 @@ class ApiMessageController
             Database::getInstance()
             ->getConnection();
 
-        // Verificar destinatario.
+        // -----------------------------------------
+        // DESTINATARIO
+        // -----------------------------------------
+
         $stmt = $db->prepare("
             SELECT
                 id,
                 name,
-                role
+                role,
+                email_verified
             FROM users
             WHERE id = ?
             LIMIT 1
@@ -86,32 +100,42 @@ class ApiMessageController
             );
         }
 
-        // BogaYA: comunicación entre clientes y abogados.
         $senderRole =
             Auth::getUserRole();
 
-        if (
-            !(
-                ($senderRole === 'client' &&
-                 $receiver['role'] === 'lawyer')
-                ||
-                ($senderRole === 'lawyer' &&
-                 $receiver['role'] === 'client')
+        // -----------------------------------------
+        // SOLO CLIENTE <-> ABOGADO
+        // -----------------------------------------
+
+        $validConversation =
+            (
+                $senderRole === 'client' &&
+                $receiver['role'] === 'lawyer'
             )
-        ) {
+            ||
+            (
+                $senderRole === 'lawyer' &&
+                $receiver['role'] === 'client'
+            );
+
+        if (!$validConversation) {
             Response::error(
                 'Solo clientes y abogados pueden comunicarse entre sí',
                 403
             );
         }
 
-        // Si se informa un caso, comprobar que
-        // ambos estén relacionados con él.
-        if ($caseId) {
+        // -----------------------------------------
+        // CASO OPCIONAL
+        // -----------------------------------------
+
+        if ($caseId !== null && $caseId !== '') {
 
             $stmt = $db->prepare("
                 SELECT
+                    c.id,
                     c.client_id,
+
                     (
                         SELECT p.lawyer_id
                         FROM proposals p
@@ -119,15 +143,21 @@ class ApiMessageController
                           AND p.lawyer_id = ?
                         LIMIT 1
                     ) AS lawyer_id
+
                 FROM cases c
+
                 WHERE c.id = ?
+
                 LIMIT 1
             ");
 
-            $stmt->execute([
+            $relatedUserId =
                 $senderRole === 'lawyer'
                     ? $senderId
-                    : $receiverId,
+                    : $receiverId;
+
+            $stmt->execute([
+                $relatedUserId,
                 $caseId
             ]);
 
@@ -142,35 +172,75 @@ class ApiMessageController
                     404
                 );
             }
+
+            // El cliente del caso debe ser
+            // una de las partes de la conversación.
+            $isClientParticipant =
+                (
+                    (int)$case['client_id'] ===
+                    (int)$senderId
+                )
+                ||
+                (
+                    (int)$case['client_id'] ===
+                    (int)$receiverId
+                );
+
+            $isLawyerParticipant =
+                !empty($case['lawyer_id']);
+
+            if (
+                !$isClientParticipant ||
+                !$isLawyerParticipant
+            ) {
+                Response::error(
+                    'No estás relacionado con ese caso',
+                    403
+                );
+            }
         }
+
+        // -----------------------------------------
+        // INSERTAR MENSAJE
+        // -----------------------------------------
 
         try {
 
             $stmt = $db->prepare("
                 INSERT INTO messages
-                    (
-                        sender_id,
-                        receiver_id,
-                        case_id,
-                        message,
-                        `read`,
-                        created_at
-                    )
+                (
+                    sender_id,
+                    receiver_id,
+                    case_id,
+                    message,
+                    `read`,
+                    created_at
+                )
                 VALUES
-                    (?, ?, ?, ?, 0, NOW())
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    0,
+                    NOW()
+                )
             ");
 
             $stmt->execute([
                 $senderId,
                 $receiverId,
-                $caseId,
+                $caseId ?: null,
                 $message
             ]);
 
             $messageId =
                 $db->lastInsertId();
 
-            // Notificación al receptor.
+            // -------------------------------------
+            // NOTIFICACIÓN
+            // -------------------------------------
+
             Notification::send(
                 $receiverId,
                 '💬 Nuevo mensaje',
@@ -187,7 +257,8 @@ class ApiMessageController
 
             Response::success([
                 'id' => $messageId,
-                'message' => 'Mensaje enviado correctamente'
+                'message' =>
+                    'Mensaje enviado correctamente'
             ]);
 
         } catch (PDOException $e) {
@@ -201,7 +272,11 @@ class ApiMessageController
 
 
     /**
-     * Obtener conversación con un usuario.
+     * Obtener conversación entre usuario autenticado
+     * y otro usuario.
+     *
+     * Al abrir la conversación se marcan
+     * como leídos SOLO los mensajes recibidos.
      */
     public function getConversation($userId)
     {
@@ -224,9 +299,53 @@ class ApiMessageController
             );
         }
 
+        if (
+            $userId === (int)$currentUser
+        ) {
+            Response::error(
+                'Conversación inválida',
+                400
+            );
+        }
+
         $db =
             Database::getInstance()
             ->getConnection();
+
+        // -----------------------------------------
+        // VERIFICAR PARTICIPANTE
+        // -----------------------------------------
+
+        $stmt = $db->prepare("
+            SELECT
+                id,
+                name,
+                role,
+                foto
+            FROM users
+            WHERE id = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            $userId
+        ]);
+
+        $otherUser =
+            $stmt->fetch(
+                PDO::FETCH_ASSOC
+            );
+
+        if (!$otherUser) {
+            Response::error(
+                'Usuario no encontrado',
+                404
+            );
+        }
+
+        // -----------------------------------------
+        // MENSAJES
+        // -----------------------------------------
 
         $stmt = $db->prepare("
             SELECT
@@ -237,6 +356,7 @@ class ApiMessageController
                 m.message,
                 m.`read`,
                 m.created_at,
+
                 u.name AS sender_name,
                 u.foto AS sender_foto
 
@@ -273,7 +393,10 @@ class ApiMessageController
                 PDO::FETCH_ASSOC
             );
 
-        // Marcar mensajes recibidos como leídos.
+        // -----------------------------------------
+        // MARCAR COMO LEÍDOS
+        // -----------------------------------------
+
         $stmt = $db->prepare("
             UPDATE messages
             SET `read` = 1
@@ -287,9 +410,10 @@ class ApiMessageController
             $currentUser
         ]);
 
-        Response::success(
-            $messages
-        );
+        Response::success([
+            'user' => $otherUser,
+            'messages' => $messages
+        ]);
     }
 
 
@@ -374,7 +498,9 @@ class ApiMessageController
                         THEN receiver_id
                         ELSE sender_id
                     END
+
                 FROM messages
+
                 WHERE
                     sender_id = ?
                     OR receiver_id = ?
@@ -390,9 +516,12 @@ class ApiMessageController
         $stmt->execute([
             $currentUser,
             $currentUser,
+
             $currentUser,
             $currentUser,
+
             $currentUser,
+
             $currentUser,
             $currentUser,
             $currentUser

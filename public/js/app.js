@@ -290,6 +290,167 @@ window.generateStars = function (rating) {
 // CONTACTO
 // ============================================================
 
+window.openConversation = async function (
+    userId,
+    userName
+) {
+
+    const response =
+        await getConversation(userId);
+
+    if (!response.success) {
+        alert('No se pudo cargar la conversación');
+        return;
+    }
+
+    const modal =
+        document.createElement('div');
+
+    modal.className = 'modal';
+    modal.id = 'conversationModal';
+
+    modal.innerHTML = `
+        <div
+            class="modal-content"
+            style="
+                max-width:600px;
+                height:80vh;
+                display:flex;
+                flex-direction:column;
+            "
+        >
+
+            <h2>
+                <i class="fas fa-comments"></i>
+                ${userName}
+            </h2>
+
+            <div
+                id="conversationMessages"
+                style="
+                    flex:1;
+                    overflow-y:auto;
+                    padding:10px;
+                "
+            >
+
+                ${response.data.length
+            ? response.data.map(m => {
+
+                const mine =
+                    Number(m.sender_id) ===
+                    Number(
+                        localStorage.getItem(
+                            'bogaya_user_id'
+                        )
+                    );
+
+                return `
+                                <div
+                                    style="
+                                        text-align:${mine ? 'right' : 'left'};
+                                        margin-bottom:10px;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            display:inline-block;
+                                            padding:10px 14px;
+                                            border-radius:15px;
+                                            max-width:80%;
+                                        "
+                                    >
+                                        ${m.message}
+                                    </div>
+
+                                    <small>
+                                        ${new Date(
+                    m.created_at
+                ).toLocaleString()}
+                                    </small>
+                                </div>
+                            `;
+
+            }).join('')
+            : `
+                            <div class="empty-state">
+                                <p>
+                                    Iniciá la conversación.
+                                </p>
+                            </div>
+                          `
+        }
+
+            </div>
+
+            <textarea
+                id="conversationInput"
+                rows="2"
+                placeholder="Escribí un mensaje..."
+            ></textarea>
+
+            <div class="btn-group">
+
+                <button
+                    class="btn-primary"
+                    onclick="window.sendConversationMessage(${userId})"
+                >
+                    <i class="fas fa-paper-plane"></i>
+                    Enviar
+                </button>
+
+                <button
+                    class="btn-secondary"
+                    onclick="window.closeModal('conversationModal')"
+                >
+                    Cerrar
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+};
+
+window.sendConversationMessage = async function (receiverId) {
+
+    const input =
+        document.getElementById(
+            'conversationInput'
+        );
+
+    const message =
+        input.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    try {
+
+        await sendMessageApi(
+            receiverId,
+            message
+        );
+
+        input.value = '';
+
+        await window.openConversation(
+            receiverId,
+            ''
+        );
+
+    } catch (e) {
+
+        alert(
+            'Error: ' +
+            e.message
+        );
+    }
+};
+
 window.contactLawyer = function (lawyerId, name, phone, email) {
     if (!window.isLoggedIn()) {
         window.showLoginModal();
@@ -324,17 +485,39 @@ window.showContactModal = function (lawyerId, name, phone, email) {
 };
 
 window.sendMessage = async function (receiverId) {
-    const message = document.getElementById('contact-message').value;
-    if (!message.trim()) {
+    const message =
+        document.getElementById(
+            'contact-message'
+        ).value.trim();
+
+    if (!message) {
         alert('Escribí un mensaje');
         return;
     }
+
     try {
-        await window.sendMessageApi(receiverId, message);
-        alert('✅ Mensaje enviado');
-        window.closeModal('contactModal');
+
+        await window.sendMessageApi(
+            receiverId,
+            message
+        );
+
+        alert(
+            '✅ Mensaje enviado'
+        );
+
+        window.closeModal(
+            'contactModal'
+        );
+
+        await window.updateMessagesBadge();
+
     } catch (e) {
-        alert('Error: ' + e.message);
+
+        alert(
+            'Error: ' +
+            e.message
+        );
     }
 };
 
@@ -1156,6 +1339,7 @@ async function showEditProfileModal() {
                             name="email"
                             value="${p.email || ''}"
                             required
+                            readonly
                         >
 
                         <label>Teléfono</label>
@@ -1536,6 +1720,7 @@ async function showEditProfileModal() {
                         id="edit-email"
                         value="${p.email || ''}"
                         required
+                        readonly
                     >
 
                     <label>
@@ -2093,6 +2278,87 @@ window.deleteReview = async function (reviewId) {
 // MENSAJES
 // ============================================================
 
+// ============================================================
+// MENSAJES
+// ============================================================
+
+let currentConversationUserId = null;
+let currentConversationUserName = '';
+
+
+// ------------------------------------------------------------
+// BADGE DE MENSAJES
+// ------------------------------------------------------------
+
+window.updateMessagesBadge = async function () {
+
+    const badge =
+        document.getElementById(
+            'messages-badge'
+        );
+
+    if (!badge) {
+        return;
+    }
+
+    if (!window.isLoggedIn()) {
+        badge.style.display = 'none';
+        return;
+    }
+
+    try {
+
+        const response =
+            await getConversations();
+
+        if (
+            !response.success ||
+            !Array.isArray(response.data)
+        ) {
+            badge.style.display = 'none';
+            return;
+        }
+
+        const total =
+            response.data.reduce(
+                (sum, conversation) =>
+                    sum +
+                    Number(
+                        conversation.unread_count || 0
+                    ),
+                0
+            );
+
+        if (total > 0) {
+
+            badge.textContent =
+                total > 99
+                    ? '99+'
+                    : total;
+
+            badge.style.display =
+                'inline-block';
+
+        } else {
+
+            badge.style.display =
+                'none';
+        }
+
+    } catch (e) {
+
+        console.warn(
+            'No se pudo actualizar badge de mensajes:',
+            e
+        );
+    }
+};
+
+
+// ------------------------------------------------------------
+// LISTA DE CONVERSACIONES
+// ------------------------------------------------------------
+
 window.loadMessages = async function () {
 
     const container =
@@ -2118,82 +2384,717 @@ window.loadMessages = async function () {
 
         if (
             !response.success ||
-            !response.data.length
+            !Array.isArray(response.data) ||
+            response.data.length === 0
         ) {
 
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-comments"></i>
+
                     <p>
                         Todavía no tenés conversaciones.
                     </p>
+
                     <small>
-                        Podés contactar a un abogado desde el buscador.
+                        Podés contactar a un abogado
+                        desde el buscador.
                     </small>
                 </div>
             `;
+
+            await window.updateMessagesBadge();
 
             return;
         }
 
         container.innerHTML =
-            response.data.map(c => `
-                <button
-                    class="message-contact"
-                    onclick="window.openConversation(${c.id}, '${String(c.name).replace(/'/g, "\\'")}')"
-                >
+            response.data.map(c => {
 
-                    <div class="message-avatar">
+                const unread =
+                    Number(
+                        c.unread_count || 0
+                    );
 
-                        ${c.foto
-                    ? `
-                                    <img
-                                        src="${c.foto}"
-                                        alt="${c.name}"
-                                    >
-                                  `
-                    : `
-                                    <i class="fas fa-user"></i>
-                                  `
-                }
+                const safeName =
+                    String(
+                        c.name || 'Usuario'
+                    )
+                        .replace(/\\/g, '\\\\')
+                        .replace(/'/g, "\\'");
+
+                return `
+                    <div
+                        class="card"
+                        style="
+                            cursor:pointer;
+                            margin-bottom:12px;
+                        "
+                        onclick="window.openConversation(
+                            ${Number(c.id)},
+                            '${safeName}'
+                        )"
+                    >
+
+                        <div
+                            style="
+                                display:flex;
+                                align-items:center;
+                                gap:12px;
+                            "
+                        >
+
+                            <div
+                                style="
+                                    width:52px;
+                                    height:52px;
+                                    min-width:52px;
+                                    border-radius:50%;
+                                    overflow:hidden;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    background:#e5e7eb;
+                                "
+                            >
+
+                                ${c.foto
+                        ? `
+                                        <img
+                                            src="${c.foto}"
+                                            alt="${c.name || 'Usuario'}"
+                                            style="
+                                                width:100%;
+                                                height:100%;
+                                                object-fit:cover;
+                                            "
+                                        >
+                                      `
+                        : `
+                                        <i
+                                            class="fas fa-user"
+                                            style="
+                                                font-size:22px;
+                                                color:#64748b;
+                                            "
+                                        ></i>
+                                      `
+                    }
+
+                            </div>
+
+
+                            <div
+                                style="
+                                    flex:1;
+                                    min-width:0;
+                                "
+                            >
+
+                                <div
+                                    style="
+                                        display:flex;
+                                        justify-content:space-between;
+                                        align-items:center;
+                                        gap:10px;
+                                    "
+                                >
+
+                                    <strong>
+                                        ${c.name || 'Usuario'}
+                                    </strong>
+
+                                    ${unread > 0
+                        ? `
+                                                <span
+                                                    style="
+                                                        min-width:21px;
+                                                        height:21px;
+                                                        padding:0 6px;
+                                                        display:inline-flex;
+                                                        align-items:center;
+                                                        justify-content:center;
+                                                        background:#ef4444;
+                                                        color:#fff;
+                                                        border-radius:999px;
+                                                        font-size:12px;
+                                                        font-weight:700;
+                                                    "
+                                                >
+                                                    ${unread > 99
+                            ? '99+'
+                            : unread
+                        }
+                                                </span>
+                                              `
+                        : ''
+                    }
+
+                                </div>
+
+
+                                <div
+                                    style="
+                                        color:#64748b;
+                                        margin-top:4px;
+                                        white-space:nowrap;
+                                        overflow:hidden;
+                                        text-overflow:ellipsis;
+                                    "
+                                >
+                                    ${c.last_message
+                    || 'Nueva conversación'
+                    }
+                                </div>
+
+
+                                ${c.last_message_at
+                        ? `
+                                            <small
+                                                style="
+                                                    color:#94a3b8;
+                                                "
+                                            >
+                                                ${new Date(
+                            c.last_message_at
+                        ).toLocaleString()}
+                                            </small>
+                                          `
+                        : ''
+                    }
+
+                            </div>
+
+                        </div>
 
                     </div>
+                `;
 
-                    <div class="message-summary">
+            }).join('');
 
-                        <strong>
-                            ${c.name}
-                        </strong>
-
-                        <span>
-                            ${c.last_message ||
-                'Nueva conversación'
-                }
-                        </span>
-
-                    </div>
-
-                    ${Number(c.unread_count) > 0
-                    ? `
-                                <span class="message-unread">
-                                    ${c.unread_count}
-                                </span>
-                              `
-                    : ''
-                }
-
-                </button>
-            `).join('');
+        await window.updateMessagesBadge();
 
     } catch (e) {
 
         container.innerHTML = `
-            <p class="text-danger">
-                Error: ${e.message}
-            </p>
+            <div class="empty-state">
+
+                <i class="fas fa-triangle-exclamation"></i>
+
+                <p>
+                    No se pudieron cargar los mensajes.
+                </p>
+
+                <small>
+                    ${e.message}
+                </small>
+
+            </div>
         `;
     }
 };
+
+
+// ------------------------------------------------------------
+// ABRIR CONVERSACIÓN
+// ------------------------------------------------------------
+
+window.openConversation =
+    async function (
+        userId,
+        userName
+    ) {
+
+        currentConversationUserId =
+            Number(userId);
+
+        currentConversationUserName =
+            userName || 'Conversación';
+
+        try {
+
+            const response =
+                await getConversation(
+                    currentConversationUserId
+                );
+
+            if (!response.success) {
+
+                alert(
+                    'No se pudo cargar la conversación.'
+                );
+
+                return;
+            }
+
+            const oldModal =
+                document.getElementById(
+                    'conversationModal'
+                );
+
+            if (oldModal) {
+                oldModal.remove();
+            }
+
+            const modal =
+                document.createElement('div');
+
+            modal.className = 'modal';
+            modal.id = 'conversationModal';
+
+            const otherUser =
+                response.user || {};
+
+            const messages =
+                Array.isArray(
+                    response.messages
+                )
+                    ? response.messages
+                    : Array.isArray(
+                        response.data
+                    )
+                        ? response.data
+                        : [];
+
+            modal.innerHTML = `
+                <div
+                    class="modal-content"
+                    style="
+                        width:min(600px, 94vw);
+                        max-width:600px;
+                        height:min(760px, 85vh);
+                        display:flex;
+                        flex-direction:column;
+                    "
+                >
+
+                    <div
+                        style="
+                            display:flex;
+                            align-items:center;
+                            justify-content:space-between;
+                            gap:10px;
+                            padding-bottom:12px;
+                            border-bottom:1px solid #e5e7eb;
+                        "
+                    >
+
+                        <div
+                            style="
+                                display:flex;
+                                align-items:center;
+                                gap:10px;
+                            "
+                        >
+
+                            <div
+                                style="
+                                    width:42px;
+                                    height:42px;
+                                    min-width:42px;
+                                    border-radius:50%;
+                                    overflow:hidden;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    background:#e5e7eb;
+                                "
+                            >
+
+                                ${otherUser.foto
+                    ? `
+                                            <img
+                                                src="${otherUser.foto}"
+                                                alt="${currentConversationUserName}"
+                                                style="
+                                                    width:100%;
+                                                    height:100%;
+                                                    object-fit:cover;
+                                                "
+                                            >
+                                          `
+                    : `
+                                            <i
+                                                class="fas fa-user"
+                                                style="
+                                                    color:#64748b;
+                                                "
+                                            ></i>
+                                          `
+                }
+
+                            </div>
+
+                            <h2 style="margin:0;">
+                                <i class="fas fa-comments"></i>
+                                ${currentConversationUserName}
+                            </h2>
+
+                        </div>
+
+                        <button
+                            class="btn-secondary"
+                            onclick="window.closeModal('conversationModal')"
+                        >
+                            ✕
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="conversationMessages"
+                        style="
+                            flex:1;
+                            overflow-y:auto;
+                            padding:16px 4px;
+                            margin-top:8px;
+                        "
+                    >
+
+                        ${messages.length
+                    ? messages
+                        .map(m => {
+
+                            const mine =
+                                Number(
+                                    m.sender_id
+                                ) ===
+                                Number(
+                                    localStorage.getItem(
+                                        'bogaya_user_id'
+                                    )
+                                );
+
+                            const time =
+                                m.created_at
+                                    ? new Date(
+                                        m.created_at
+                                    ).toLocaleString()
+                                    : '';
+
+                            return `
+                                            <div
+                                                style="
+                                                    display:flex;
+                                                    justify-content:${mine ? 'flex-end' : 'flex-start'};
+                                                    margin-bottom:10px;
+                                                "
+                                            >
+
+                                                <div
+                                                    style="
+                                                        max-width:78%;
+                                                        padding:10px 13px;
+                                                        border-radius:16px;
+                                                        background:${mine ? '#dbeafe' : '#f1f5f9'};
+                                                    "
+                                                >
+
+                                                    <div>
+                                                        ${String(
+                                m.message || ''
+                            )
+                                    .replace(
+                                        /</g,
+                                        '&lt;'
+                                    )
+                                    .replace(
+                                        />/g,
+                                        '&gt;'
+                                    )
+                                }
+                                                    </div>
+
+                                                    <small
+                                                        style="
+                                                            display:block;
+                                                            margin-top:5px;
+                                                            opacity:.6;
+                                                            font-size:10px;
+                                                        "
+                                                    >
+                                                        ${time}
+                                                        ${mine
+                                    ? ' ✓'
+                                    : ''
+                                }
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+                                        `;
+
+                        }).join('')
+                    : `
+                                    <div class="empty-state">
+                                        <i class="fas fa-comments"></i>
+                                        <p>
+                                            Todavía no hay mensajes.
+                                        </p>
+                                    </div>
+                                  `
+                }
+
+                    </div>
+
+
+                    <div
+                        style="
+                            display:flex;
+                            gap:8px;
+                            align-items:flex-end;
+                            border-top:1px solid #e5e7eb;
+                            padding-top:10px;
+                        "
+                    >
+
+                        <textarea
+                            id="conversationInput"
+                            rows="2"
+                            maxlength="5000"
+                            placeholder="Escribí un mensaje..."
+                            style="
+                                flex:1;
+                                resize:none;
+                            "
+                        ></textarea>
+
+                        <button
+                            class="btn-primary"
+                            onclick="
+                                window.sendConversationMessage(
+                                    ${currentConversationUserId}
+                                )
+                            "
+                            title="Enviar mensaje"
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+            document.body.appendChild(
+                modal
+            );
+
+            const messagesContainer =
+                document.getElementById(
+                    'conversationMessages'
+                );
+
+            if (messagesContainer) {
+                messagesContainer.scrollTop =
+                    messagesContainer.scrollHeight;
+            }
+
+            const input =
+                document.getElementById(
+                    'conversationInput'
+                );
+
+            if (input) {
+
+                input.focus();
+
+                input.addEventListener(
+                    'keydown',
+                    function (e) {
+
+                        if (
+                            e.key === 'Enter' &&
+                            !e.shiftKey
+                        ) {
+
+                            e.preventDefault();
+
+                            window.sendConversationMessage(
+                                currentConversationUserId
+                            );
+                        }
+                    }
+                );
+            }
+
+            // Al abrir la conversación,
+            // los mensajes recibidos ya fueron
+            // marcados como leídos en backend.
+            await window.updateMessagesBadge();
+
+        } catch (e) {
+
+            alert(
+                'Error: ' +
+                e.message
+            );
+        }
+    };
+
+
+// ------------------------------------------------------------
+// ENVIAR MENSAJE DESDE UNA CONVERSACIÓN
+// ------------------------------------------------------------
+
+window.sendConversationMessage =
+    async function (receiverId) {
+
+        const input =
+            document.getElementById(
+                'conversationInput'
+            );
+
+        if (!input) {
+            return;
+        }
+
+        const message =
+            input.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        const button =
+            document.querySelector(
+                '#conversationModal .btn-primary'
+            );
+
+        if (button) {
+            button.disabled = true;
+        }
+
+        try {
+
+            await sendMessageApi(
+                Number(receiverId),
+                message
+            );
+
+            input.value = '';
+
+            const response =
+                await getConversation(
+                    Number(receiverId)
+                );
+
+            if (response.success) {
+
+                const messagesContainer =
+                    document.getElementById(
+                        'conversationMessages'
+                    );
+
+                if (messagesContainer) {
+
+                    const messages =
+                        response.messages ||
+                        response.data ||
+                        [];
+
+                    const myId =
+                        Number(
+                            localStorage.getItem(
+                                'bogaya_user_id'
+                            )
+                        );
+
+                    messagesContainer.innerHTML =
+                        messages
+                            .map(m => {
+
+                                const mine =
+                                    Number(
+                                        m.sender_id
+                                    ) === myId;
+
+                                return `
+                                    <div
+                                        style="
+                                            display:flex;
+                                            justify-content:${mine ? 'flex-end' : 'flex-start'};
+                                            margin-bottom:10px;
+                                        "
+                                    >
+
+                                        <div
+                                            style="
+                                                max-width:78%;
+                                                padding:10px 13px;
+                                                border-radius:16px;
+                                                background:${mine ? '#dbeafe' : '#f1f5f9'};
+                                            "
+                                        >
+
+                                            <div>
+                                                ${String(
+                                    m.message || ''
+                                )
+                                        .replace(
+                                            /</g,
+                                            '&lt;'
+                                        )
+                                        .replace(
+                                            />/g,
+                                            '&gt;'
+                                        )
+                                    }
+                                            </div>
+
+                                            <small
+                                                style="
+                                                    display:block;
+                                                    margin-top:5px;
+                                                    opacity:.6;
+                                                    font-size:10px;
+                                                "
+                                            >
+                                                ${m.created_at
+                                        ? new Date(
+                                            m.created_at
+                                        ).toLocaleString()
+                                        : ''
+                                    }
+                                                ${mine
+                                        ? ' ✓'
+                                        : ''
+                                    }
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+                                `;
+
+                            })
+                            .join('');
+
+                    messagesContainer.scrollTop =
+                        messagesContainer.scrollHeight;
+                }
+            }
+
+            await window.updateMessagesBadge();
+
+        } catch (e) {
+
+            alert(
+                'Error: ' +
+                e.message
+            );
+
+        } finally {
+
+            if (button) {
+                button.disabled = false;
+            }
+
+            input.focus();
+        }
+    };
 
 // ============================================================
 // EVENTOS DE CHIPS
@@ -2215,11 +3116,13 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async function () {
     const logged = await window.checkAuth();
     const role = window.getRole();
-
     const navAgenda = document.getElementById('nav-agenda');
     const navDashboard = document.getElementById('nav-dashboard');
     const navSearch = document.getElementById('nav-search');
 
+    if (logged) {
+        window.updateMessagesBadge();
+    }
     if (role === 'admin') {
         navAgenda.style.display = 'none';
         navSearch.style.display = 'none';

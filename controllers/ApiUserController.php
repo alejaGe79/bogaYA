@@ -130,14 +130,12 @@ class ApiUserController
                 UPDATE users
                 SET
                     name = ?,
-                    email = ?,
                     phone = ?
                 WHERE id = ?
             ");
 
             $stmt->execute([
                 $name,
-                $email,
                 $phone,
                 $userId
             ]);
@@ -240,14 +238,12 @@ class ApiUserController
                 UPDATE users
                 SET
                     name = ?,
-                    email = ?,
                     phone = ?
                 WHERE id = ?
             ");
 
             $stmt->execute([
                 $name,
-                $email,
                 $phone,
                 $userId
             ]);

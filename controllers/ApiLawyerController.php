@@ -424,13 +424,11 @@ class ApiLawyerController
                 UPDATE users
                 SET
                     name = ?,
-                    email = ?,
                     phone = ?
             ";
 
             $paramsUser = [
                 $name,
-                $email,
                 $phone
             ];
 
