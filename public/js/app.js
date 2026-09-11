@@ -2748,340 +2748,169 @@ window.loadMessages = async function () {
 // ABRIR CONVERSACIÓN
 // ------------------------------------------------------------
 
-window.openConversation =
-    async function (
-        userId,
-        userName
-    ) {
+window.openConversation = async function (
+    userId,
+    userName = ''
+) {
 
-        currentConversationUserId =
-            Number(userId);
+    try {
 
-        currentConversationUserName =
-            userName || 'Conversación';
+        const response = await getConversation(userId);
 
-        try {
+        if (!response || !response.success) {
+            alert('No se pudo cargar la conversación');
+            return;
+        }
 
-            const response =
-                await getConversation(
-                    currentConversationUserId
-                );
+        const conversationUser =
+            response.user || {};
 
-            if (!response.success) {
+        const messages =
+            Array.isArray(response.messages)
+                ? response.messages
+                : [];
 
-                alert(
-                    'No se pudo cargar la conversación.'
-                );
+        const displayName =
+            userName ||
+            conversationUser.name ||
+            'Conversación';
 
-                return;
-            }
+        const modal =
+            document.createElement('div');
 
-            const oldModal =
-                document.getElementById(
-                    'conversationModal'
-                );
+        modal.className = 'modal';
+        modal.id = 'conversationModal';
 
-            if (oldModal) {
-                oldModal.remove();
-            }
+        modal.innerHTML = `
+            <div
+                class="modal-content"
+                style="
+                    max-width:600px;
+                    height:80vh;
+                    display:flex;
+                    flex-direction:column;
+                "
+            >
 
-            const modal =
-                document.createElement('div');
+                <h2>
+                    <i class="fas fa-comments"></i>
+                    ${displayName}
+                </h2>
 
-            modal.className = 'modal';
-            modal.id = 'conversationModal';
-
-            const otherUser =
-                response.user || {};
-
-            const messages =
-                Array.isArray(
-                    response.messages
-                )
-                    ? response.messages
-                    : Array.isArray(
-                        response.data
-                    )
-                        ? response.data
-                        : [];
-
-            modal.innerHTML = `
                 <div
-                    class="modal-content"
+                    id="conversationMessages"
                     style="
-                        width:min(600px, 94vw);
-                        max-width:600px;
-                        height:min(760px, 85vh);
-                        display:flex;
-                        flex-direction:column;
+                        flex:1;
+                        overflow-y:auto;
+                        padding:10px;
                     "
                 >
 
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            justify-content:space-between;
-                            gap:10px;
-                            padding-bottom:12px;
-                            border-bottom:1px solid #e5e7eb;
-                        "
-                    >
+                    ${messages.length
+                ? messages.map(m => {
 
-                        <div
-                            style="
-                                display:flex;
-                                align-items:center;
-                                gap:10px;
-                            "
-                        >
-
-                            <div
-                                style="
-                                    width:42px;
-                                    height:42px;
-                                    min-width:42px;
-                                    border-radius:50%;
-                                    overflow:hidden;
-                                    display:flex;
-                                    align-items:center;
-                                    justify-content:center;
-                                    background:#e5e7eb;
-                                "
-                            >
-
-                                ${otherUser.foto
-                    ? `
-                                            <img
-                                                src="${otherUser.foto}"
-                                                alt="${currentConversationUserName}"
-                                                style="
-                                                    width:100%;
-                                                    height:100%;
-                                                    object-fit:cover;
-                                                "
-                                            >
-                                          `
-                    : `
-                                            <i
-                                                class="fas fa-user"
-                                                style="
-                                                    color:#64748b;
-                                                "
-                                            ></i>
-                                          `
-                }
-
-                            </div>
-
-                            <h2 style="margin:0;">
-                                <i class="fas fa-comments"></i>
-                                ${currentConversationUserName}
-                            </h2>
-
-                        </div>
-
-                        <button
-                            class="btn-secondary"
-                            onclick="window.closeModal('conversationModal')"
-                        >
-                            ✕
-                        </button>
-
-                    </div>
-
-
-                    <div
-                        id="conversationMessages"
-                        style="
-                            flex:1;
-                            overflow-y:auto;
-                            padding:16px 4px;
-                            margin-top:8px;
-                        "
-                    >
-
-                        ${messages.length
-                    ? messages
-                        .map(m => {
-
-                            const mine =
-                                Number(
-                                    m.sender_id
-                                ) ===
-                                Number(
-                                    localStorage.getItem(
-                                        'bogaya_user_id'
-                                    )
-                                );
-
-                            const time =
-                                m.created_at
-                                    ? new Date(
-                                        m.created_at
-                                    ).toLocaleString()
-                                    : '';
-
-                            return `
-                                            <div
-                                                style="
-                                                    display:flex;
-                                                    justify-content:${mine ? 'flex-end' : 'flex-start'};
-                                                    margin-bottom:10px;
-                                                "
-                                            >
-
-                                                <div
-                                                    style="
-                                                        max-width:78%;
-                                                        padding:10px 13px;
-                                                        border-radius:16px;
-                                                        background:${mine ? '#dbeafe' : '#f1f5f9'};
-                                                    "
-                                                >
-
-                                                    <div>
-                                                        ${String(
-                                m.message || ''
+                    const mine =
+                        Number(m.sender_id) ===
+                        Number(
+                            localStorage.getItem(
+                                'bogaya_user_id'
                             )
-                                    .replace(
-                                        /</g,
-                                        '&lt;'
-                                    )
-                                    .replace(
-                                        />/g,
-                                        '&gt;'
-                                    )
-                                }
-                                                    </div>
+                        );
 
-                                                    <small
-                                                        style="
-                                                            display:block;
-                                                            margin-top:5px;
-                                                            opacity:.6;
-                                                            font-size:10px;
-                                                        "
-                                                    >
-                                                        ${time}
-                                                        ${mine
-                                    ? ' ✓'
-                                    : ''
-                                }
-                                                    </small>
+                    return `
+                                    <div
+                                        style="
+                                            text-align:${mine ? 'right' : 'left'};
+                                            margin-bottom:10px;
+                                        "
+                                    >
 
-                                                </div>
+                                        <div
+                                            style="
+                                                display:inline-block;
+                                                padding:10px 14px;
+                                                border-radius:15px;
+                                                max-width:80%;
+                                            "
+                                        >
+                                            ${m.message}
+                                        </div>
 
-                                            </div>
-                                        `;
+                                        <small>
+                                            ${new Date(
+                        m.created_at
+                    ).toLocaleString()}
+                                        </small>
 
-                        }).join('')
-                    : `
-                                    <div class="empty-state">
-                                        <i class="fas fa-comments"></i>
-                                        <p>
-                                            Todavía no hay mensajes.
-                                        </p>
                                     </div>
-                                  `
-                }
+                                `;
 
-                    </div>
+                }).join('')
 
-
-                    <div
-                        style="
-                            display:flex;
-                            gap:8px;
-                            align-items:flex-end;
-                            border-top:1px solid #e5e7eb;
-                            padding-top:10px;
-                        "
-                    >
-
-                        <textarea
-                            id="conversationInput"
-                            rows="2"
-                            maxlength="5000"
-                            placeholder="Escribí un mensaje..."
-                            style="
-                                flex:1;
-                                resize:none;
-                            "
-                        ></textarea>
-
-                        <button
-                            class="btn-primary"
-                            onclick="
-                                window.sendConversationMessage(
-                                    ${currentConversationUserId}
-                                )
-                            "
-                            title="Enviar mensaje"
-                        >
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-
-                    </div>
+                : `
+                                <div class="empty-state">
+                                    <p>
+                                        Iniciá la conversación.
+                                    </p>
+                                </div>
+                            `
+            }
 
                 </div>
-            `;
 
-            document.body.appendChild(
-                modal
+                <textarea
+                    id="conversationInput"
+                    rows="2"
+                    placeholder="Escribí un mensaje..."
+                ></textarea>
+
+                <div class="btn-group">
+
+                    <button
+                        class="btn-primary"
+                        onclick="window.sendConversationMessage(${userId})"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        Enviar
+                    </button>
+
+                    <button
+                        class="btn-secondary"
+                        onclick="window.closeModal('conversationModal')"
+                    >
+                        Cerrar
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const container =
+            document.getElementById(
+                'conversationMessages'
             );
 
-            const messagesContainer =
-                document.getElementById(
-                    'conversationMessages'
-                );
-
-            if (messagesContainer) {
-                messagesContainer.scrollTop =
-                    messagesContainer.scrollHeight;
-            }
-
-            const input =
-                document.getElementById(
-                    'conversationInput'
-                );
-
-            if (input) {
-
-                input.focus();
-
-                input.addEventListener(
-                    'keydown',
-                    function (e) {
-
-                        if (
-                            e.key === 'Enter' &&
-                            !e.shiftKey
-                        ) {
-
-                            e.preventDefault();
-
-                            window.sendConversationMessage(
-                                currentConversationUserId
-                            );
-                        }
-                    }
-                );
-            }
-
-            // Al abrir la conversación,
-            // los mensajes recibidos ya fueron
-            // marcados como leídos en backend.
-            await window.updateMessagesBadge();
-
-        } catch (e) {
-
-            alert(
-                'Error: ' +
-                e.message
-            );
+        if (container) {
+            container.scrollTop =
+                container.scrollHeight;
         }
-    };
+
+    } catch (e) {
+
+        console.error(
+            'Error al abrir conversación:',
+            e
+        );
+
+        alert(
+            'No se pudo cargar la conversación: ' +
+            e.message
+        );
+    }
+};
 
 
 // ------------------------------------------------------------

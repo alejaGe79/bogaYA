@@ -359,7 +359,8 @@ class ApiMessageController
                 m.created_at,
 
                 u.name AS sender_name,
-                u.foto AS sender_foto
+                u.foto AS sender_foto,
+                u.avatar AS sender_avatar
 
             FROM messages m
 

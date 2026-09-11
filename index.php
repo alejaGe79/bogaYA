@@ -62,7 +62,7 @@ $router->add('PUT', '/api/proposals/{id}/status', 'ApiProposalController@updateS
 
 // ========== MENSAJES ==========
 $router->add('POST', '/api/messages', 'ApiMessageController@send');
-$router->add('GET', '/api/messages/{userId}', 'ApiMessageController@');
+$router->add('GET', '/api/messages/{userId}', 'ApiMessageController@getConversation');
 $router->add('GET', '/api/messages','ApiMessageController@conversations');
 
 // ========== PAGOS ==========

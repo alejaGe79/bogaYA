@@ -24,6 +24,120 @@ async function checkAuth() {
     return true;
 }
 
+window.loadAvatarSelector = async function () {
+
+    const grid =
+        document.getElementById(
+            'avatar-grid'
+        );
+
+    if (!grid) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await window.getAvatars();
+
+        if (
+            !response.success ||
+            !Array.isArray(response.data)
+        ) {
+            throw new Error(
+                'No se pudieron obtener los avatares'
+            );
+        }
+
+        grid.innerHTML =
+            response.data.map(avatar => `
+                
+                <button
+                    type="button"
+                    class="avatar-option"
+                    data-avatar="${avatar.name}"
+                    onclick="window.selectAvatar('${avatar.name}')"
+                    style="
+                        border:2px solid transparent;
+                        background:#fff;
+                        border-radius:12px;
+                        padding:5px;
+                        cursor:pointer;
+                    "
+                >
+                    <img
+                        src="${avatar.file}"
+                        alt="${avatar.name}"
+                        style="
+                            width:100%;
+                            aspect-ratio:1;
+                            object-fit:contain;
+                            display:block;
+                        "
+                    >
+                </button>
+
+            `).join('');
+
+        window.selectAvatar(
+            document.getElementById(
+                'reg-avatar'
+            ).value || 'avatar_01'
+        );
+
+    } catch (e) {
+
+        console.error(
+            'Error cargando avatares:',
+            e
+        );
+
+        grid.innerHTML = `
+            <div
+                style="
+                    grid-column:1/-1;
+                    color:#dc2626;
+                    font-size:13px;
+                "
+            >
+                No se pudieron cargar los avatares.
+            </div>
+        `;
+    }
+};
+
+window.selectAvatar = function (avatarName) {
+
+    const input =
+        document.getElementById(
+            'reg-avatar'
+        );
+
+    if (input) {
+        input.value = avatarName;
+    }
+
+    document
+        .querySelectorAll('.avatar-option')
+        .forEach(button => {
+
+            const selected =
+                button.dataset.avatar ===
+                avatarName;
+
+            button.style.borderColor =
+                selected
+                    ? '#3b82f6'
+                    : 'transparent';
+
+            button.style.background =
+                selected
+                    ? '#eff6ff'
+                    : '#fff';
+
+        });
+};
+
 window.showLoginModal = function () {
     if (document.getElementById('loginModal')) return;
 
@@ -44,6 +158,10 @@ window.showLoginModal = function () {
                 <input type="email" id="reg-email" placeholder="Email">
                 <input type="password" id="reg-password" placeholder="Contraseña">
                 <input type="text" id="reg-phone" placeholder="Teléfono (opcional)">
+                <div id="avatar-grid" style=" display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">
+                    <div style="grid-column:1/-1; text-align:center;">Cargando avatares...</div>
+                </div>
+                <input type="hidden" id="reg-avatar" value="avatar_01">
                 <select id="reg-role" onchange="window.toggleSpecialties(this.value)">
                     <option value="client">Cliente</option>
                     <option value="lawyer">Abogado</option>
@@ -77,8 +195,10 @@ window.showLoginModal = function () {
                 <button class="btn-secondary btn-block" onclick="window.closeModal('loginModal')" style="margin-top:8px;">Cerrar</button>
             </div>
         </div>
+    </div>
     `;
     document.body.insertAdjacentHTML('beforeend', html);
+    window.loadAvatarSelector();
 };
 
 window.toggleSpecialties = function (role) {
@@ -110,6 +230,10 @@ window.doRegister = async function () {
     const password = document.getElementById('reg-password').value;
     const role = document.getElementById('reg-role').value;
     const phone = document.getElementById('reg-phone').value || '';
+    const avatar =
+        document.getElementById(
+            'reg-avatar'
+        ).value || 'avatar_01';
     let especialidades = [];
 
     if (role === 'lawyer') {
@@ -137,7 +261,7 @@ window.doRegister = async function () {
     }
 
     try {
-        await window.registerUser(email, password, name, role, phone, especialidades);
+        await window.registerUser(email, password, name, role, phone, especialidades, avatar);
         alert('✅ Registro exitoso. Revisa tu email para verificar tu cuenta.');
         window.closeModal('loginModal');
         window.showVerificationMessage(email);

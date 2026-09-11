@@ -72,7 +72,8 @@ async function registerUser(
     name,
     role,
     phone = '',
-    especialidades = []
+    especialidades = [],
+    avatar = 'avatar_01'
 ) {
     return apiFetch('/auth/register', {
         method: 'POST',
@@ -82,7 +83,8 @@ async function registerUser(
             name,
             role,
             phone,
-            especialidades
+            especialidades,
+            avatar
         })
     });
 }
@@ -575,15 +577,6 @@ async function sendMessageApi(
             case_id
         })
     });
-}
-
-
-async function getConversation(
-    userId
-) {
-    return apiFetch(
-        '/messages/' + userId
-    );
 }
 
 

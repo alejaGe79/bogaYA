@@ -17,9 +17,16 @@ class ApiAuthController {
         $hash = password_hash($input['password'], PASSWORD_DEFAULT);
         $token = bin2hex(random_bytes(32));
         $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
-        
+        if (
+            !preg_match(
+                '/^avatar_(0[1-9]|1[0-9]|20)$/',
+                $avatar
+            )
+        ) {
+            $avatar = 'avatar_01';
+        }
         try {
-            $stmt = $db->prepare("INSERT INTO users (email, email_verified, verification_token, verification_expires, password_hash, role, name, phone, created_at) 
+            $stmt = $db->prepare("INSERT INTO users (email, email_verified, verification_token, verification_expires, password_hash, role, name, phone, avatar, created_at) 
                                   VALUES (?, 0, ?, ?, ?, ?, ?, ?, NOW())");
             $stmt->execute([
                 $input['email'],
@@ -28,7 +35,8 @@ class ApiAuthController {
                 $hash,
                 $input['role'] ?? 'client',
                 $input['name'],
-                $input['phone'] ?? ''
+                $input['phone'] ?? '',
+                $avatar
             ]);
             $userId = $db->lastInsertId();
 

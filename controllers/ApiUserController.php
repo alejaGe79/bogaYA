@@ -311,26 +311,51 @@ class ApiUserController
         }
     }
 
+    /**
+ * Obtener los avatares disponibles.
+ */
     public function listAvatars()
-{
-    $db =
-        Database::getInstance()
-        ->getConnection();
+    {
+        $avatarDir =
+            __DIR__ .
+            '/../public/avatars/';
 
-    $stmt = $db->query("
-        SELECT
-            codigo,
-            nombre,
-            archivo
-        FROM avatars
-        WHERE activo = 1
-        ORDER BY id ASC
-    ");
+        if (!is_dir($avatarDir)) {
+            Response::error(
+                'Directorio de avatares no encontrado',
+                500
+            );
+        }
 
-    Response::success(
-        $stmt->fetchAll(
-            PDO::FETCH_ASSOC
-        )
-    );
-}
+        $files = glob(
+            $avatarDir . 'avatar_*.png'
+        );
+
+        if ($files === false) {
+            $files = [];
+        }
+
+        sort($files);
+
+        $avatars = [];
+
+        foreach ($files as $file) {
+
+            $filename =
+                basename($file);
+
+            $name =
+                pathinfo(
+                    $filename,
+                    PATHINFO_FILENAME
+                );
+
+            $avatars[] = [
+                'name' => $name,
+                'file' => '/bogaya/public/avatars/' . $filename
+            ];
+        }
+
+        Response::success($avatars);
+    }
 }
