@@ -22,6 +22,9 @@ $router->add('POST', '/api/auth/resend-verification', 'ApiAuthController@resendV
 $router->add('GET', '/api/users/profile', 'ApiUserController@getProfile');
 $router->add('PUT', '/api/users/profile', 'ApiUserController@updateProfile');
 
+// ======== AVATARS =========
+$router->add('GET', '/api/avatars', 'ApiUserController@listAvatars');
+
 
 // ========== ABOGADOS ==========
 $router->add('GET', '/api/lawyers', 'ApiLawyerController@list');
@@ -59,7 +62,7 @@ $router->add('PUT', '/api/proposals/{id}/status', 'ApiProposalController@updateS
 
 // ========== MENSAJES ==========
 $router->add('POST', '/api/messages', 'ApiMessageController@send');
-$router->add('GET', '/api/messages/{userId}', 'ApiMessageController@getConversation');
+$router->add('GET', '/api/messages/{userId}', 'ApiMessageController@');
 $router->add('GET', '/api/messages','ApiMessageController@conversations');
 
 // ========== PAGOS ==========

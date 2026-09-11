@@ -1174,6 +1174,18 @@ window.submitReview = async function (caseId) {
 // PERFIL
 // ============================================================
 
+window.getAvatarUrl = function (avatarCode) {
+    if (!avatarCode) {
+        avatarCode = 'avatar_01';
+    }
+
+    return (
+        '/bogaya/public/avatars/' +
+        encodeURIComponent(avatarCode) +
+        '.png'
+    );
+};
+
 window.loadProfile = async function () {
     const div = document.getElementById('profile-content');
     const role = window.getRole();
@@ -1231,23 +1243,78 @@ window.loadProfile = async function () {
             </div>
         `;
     } else if (role === 'client') {
+        let clientProfile = {};
+
+        try {
+
+            const response =
+                await getUserProfile();
+
+            if (
+                response.success
+            ) {
+                clientProfile =
+                    response.data;
+            }
+
+        } catch (e) {
+
+            console.warn(
+                'No se pudo cargar perfil cliente',
+                e
+            );
+        }
+
         div.innerHTML = `
-            <div class="profile-card">
-                <div class="profile-avatar">
-                    <i class="fas fa-user-circle"></i>
+                <div class="profile-card">
+
+                    <div class="profile-avatar">
+
+                        <img
+                            src="${window.getAvatarUrl(
+            clientProfile.avatar
+        )}"
+                            alt="Avatar"
+                            style="
+                                width:100%;
+                                height:100%;
+                                object-fit:cover;
+                                border-radius:50%;
+                            "
+                        >
+
+                    </div>
+
+                    <h2>
+                        ${clientProfile.name || userName}
+                    </h2>
+
+                    <p class="profile-role">
+                        👤 Cliente
+                    </p>
+
+                    <div class="profile-actions">
+
+                        <button
+                            class="btn-primary"
+                            onclick="window.showEditProfileModal()"
+                        >
+                            <i class="fas fa-edit"></i>
+                            Editar perfil
+                        </button>
+
+                        <button
+                            class="btn-secondary"
+                            onclick="window.navigateTo('dashboard')"
+                        >
+                            <i class="fas fa-folder-open"></i>
+                            Mis casos
+                        </button>
+
+                    </div>
+
                 </div>
-                <h2>${userName}</h2>
-                <p class="profile-role">👤 Cliente</p>
-                <div class="profile-actions">
-                    <button class="btn-primary" onclick="window.showEditProfileModal()">
-                        <i class="fas fa-edit"></i> Editar perfil
-                    </button>
-                    <button class="btn-secondary" onclick="window.navigateTo('dashboard')">
-                        <i class="fas fa-folder-open"></i> Mis casos
-                    </button>
-                </div>
-            </div>
-        `;
+            `;
     } else if (role === 'admin') {
         div.innerHTML = `
             <div class="profile-card">
@@ -1265,6 +1332,8 @@ window.loadProfile = async function () {
         `;
     }
 };
+
+
 
 // ============================================================
 // EDICIÓN DE PERFIL - ABOGADO (con todos los campos)
@@ -1677,85 +1746,165 @@ async function showEditProfileModal() {
 
         try {
 
-            const response =
-                await getUserProfile();
+            const avatarsResponse =
+                await getAvatars();
 
-            const p =
-                response.success
-                    ? response.data
-                    : {};
-
-            const modal =
-                document.createElement('div');
-
-            modal.className = 'modal';
-            modal.id = 'editProfileModal';
+            const avatars =
+                avatarsResponse.success &&
+                    Array.isArray(
+                        avatarsResponse.data
+                    )
+                    ? avatarsResponse.data
+                    : [];
 
             modal.innerHTML = `
-                <div class="modal-content"
-                    style="max-width:500px;">
+    <div
+        class="modal-content"
+        style="
+            max-width:520px;
+            max-height:90vh;
+            overflow-y:auto;
+        "
+    >
 
-                    <h2>
-                        <i class="fas fa-edit"></i>
-                        Editar perfil
-                    </h2>
+        <h2>
+            <i class="fas fa-user-edit"></i>
+            Editar perfil
+        </h2>
 
-                    <label>
-                        Nombre completo
-                    </label>
+        <label>
+            Nombre completo
+        </label>
 
-                    <input
-                        type="text"
-                        id="edit-name"
-                        value="${p.name || ''}"
-                        required
+        <input
+            type="text"
+            id="edit-name"
+            value="${p.name || ''}"
+            required
+        >
+
+        <label>
+            Email
+        </label>
+
+        <input
+            type="email"
+            value="${p.email || ''}"
+            readonly
+        >
+
+        <small
+            style="
+                display:block;
+                margin:4px 0 12px;
+                color:#64748b;
+            "
+        >
+            🔒 El email es tu identificador de cuenta
+            y no puede modificarse.
+        </small>
+
+        <label>
+            Teléfono
+        </label>
+
+        <input
+            type="text"
+            id="edit-phone"
+            value="${p.phone || ''}"
+        >
+
+        <label>
+            Elegí tu avatar
+        </label>
+
+        <div
+            id="avatar-selector"
+            style="
+                display:grid;
+                grid-template-columns:
+                    repeat(5, 1fr);
+                gap:10px;
+                margin-top:10px;
+                margin-bottom:15px;
+            "
+        >
+
+            ${avatars.map(a => `
+                    <button
+                        type="button"
+                        class="avatar-option"
+                        data-avatar="${a.codigo}"
+                        title="${a.nombre}"
+                        onclick="
+                            window.selectAvatar(
+                                '${a.codigo}'
+                            )
+                        "
+                        style="
+                            border:2px solid
+                                ${a.codigo ===
+                    (p.avatar || 'avatar_01')
+                    ? '#2563eb'
+                    : '#e5e7eb'
+                };
+                            background:#fff;
+                            border-radius:14px;
+                            padding:6px;
+                            cursor:pointer;
+                        "
                     >
 
-                    <label>
-                        Email
-                    </label>
-
-                    <input
-                        type="email"
-                        id="edit-email"
-                        value="${p.email || ''}"
-                        required
-                        readonly
-                    >
-
-                    <label>
-                        Teléfono
-                    </label>
-
-                    <input
-                        type="text"
-                        id="edit-phone"
-                        value="${p.phone || ''}"
-                    >
-
-                    <div class="btn-group">
-
-                        <button
-                            class="btn-primary"
-                            onclick="saveClientProfile()"
+                        <img
+                            src="${window.getAvatarUrl(
+                    a.codigo
+                )}"
+                            alt="${a.nombre}"
+                            style="
+                                width:100%;
+                                aspect-ratio:1;
+                                object-fit:cover;
+                                border-radius:10px;
+                            "
                         >
-                            <i class="fas fa-save"></i>
-                            Guardar
-                        </button>
 
-                        <button
-                            class="btn-secondary"
-                            onclick="closeModal('editProfileModal')"
-                        >
-                            Cancelar
-                        </button>
+                        <small>
+                            ${a.nombre}
+                        </small>
 
-                    </div>
+                    </button>
+                `).join('')
+                }
 
-                </div>
-            `;
+        </div>
 
-            document.body.appendChild(modal);
+        <input
+            type="hidden"
+            id="edit-avatar"
+            value="${p.avatar || 'avatar_01'}"
+        >
+
+        <div class="btn-group">
+
+            <button
+                class="btn-primary"
+                onclick="saveClientProfile()"
+            >
+                <i class="fas fa-save"></i>
+                Guardar
+            </button>
+
+            <button
+                class="btn-secondary"
+                onclick="closeModal('editProfileModal')"
+            >
+                Cancelar
+            </button>
+
+        </div>
+
+    </div>
+`;
 
         } catch (e) {
 

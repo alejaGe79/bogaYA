@@ -17,6 +17,7 @@ class ApiLawyerController
                 u.email,
                 u.email_verified,
                 u.foto,
+                u.avatar,
                 CASE
                     WHEN lp.mostrar_telefono = 1 THEN u.phone
                     ELSE NULL

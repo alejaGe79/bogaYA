@@ -22,6 +22,7 @@ class ApiUserController
                 email,
                 phone,
                 foto,
+                avatar,
                 role,
                 email_verified,
                 created_at
@@ -188,6 +189,8 @@ class ApiUserController
             $input['phone'] ?? ''
         );
 
+        $avatar = trim($input['avatar'] ?? 'avatar_01');
+
         if ($name === '') {
             Response::error(
                 'El nombre es obligatorio',
@@ -231,6 +234,27 @@ class ApiUserController
                 409
             );
         }
+        $stmt = $db->prepare("
+            SELECT codigo
+            FROM avatars
+            WHERE codigo = ?
+            AND activo = 1
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            $avatar
+        ]);
+
+        $avatarValido =
+            $stmt->fetchColumn();
+
+        if (!$avatarValido) {
+            Response::error(
+                'Avatar seleccionado no válido',
+                400
+            );
+        }
 
         try {
 
@@ -239,12 +263,14 @@ class ApiUserController
                 SET
                     name = ?,
                     phone = ?
+                    avatar = ?
                 WHERE id = ?
             ");
 
             $stmt->execute([
                 $name,
                 $phone,
+                $avatar,
                 $userId
             ]);
 
@@ -284,4 +310,27 @@ class ApiUserController
             );
         }
     }
+
+    public function listAvatars()
+{
+    $db =
+        Database::getInstance()
+        ->getConnection();
+
+    $stmt = $db->query("
+        SELECT
+            codigo,
+            nombre,
+            archivo
+        FROM avatars
+        WHERE activo = 1
+        ORDER BY id ASC
+    ");
+
+    Response::success(
+        $stmt->fetchAll(
+            PDO::FETCH_ASSOC
+        )
+    );
+}
 }

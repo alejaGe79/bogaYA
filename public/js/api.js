@@ -303,8 +303,52 @@ async function getMyCases() {
 async function getCase(id) {
     return apiFetch('/cases/' + id);
 }
-async function getConversations() {
-    return apiFetch('/messages');
+
+async function getConversation(userId) {
+    const response = await apiFetch(
+        '/messages/' + userId
+    );
+
+    // El backend devuelve:
+    // {
+    //   success: true,
+    //   data: {
+    //      user: {...},
+    //      messages: [...]
+    //   }
+    // }
+    //
+    // Normalizamos la respuesta para que app.js
+    // pueda trabajar con response.user y response.messages.
+
+    if (
+        response &&
+        response.success &&
+        response.data &&
+        !Array.isArray(response.data)
+    ) {
+        return {
+            ...response,
+            user: response.data.user || {},
+            messages: Array.isArray(
+                response.data.messages
+            )
+                ? response.data.messages
+                : []
+        };
+    }
+
+    // Compatibilidad por si en algún momento
+    // otro endpoint devuelve directamente un array.
+    return {
+        ...response,
+        user: response.user || {},
+        messages: Array.isArray(response.messages)
+            ? response.messages
+            : Array.isArray(response.data)
+                ? response.data
+                : []
+    };
 }
 
 
@@ -713,4 +757,13 @@ async function resetPasswordAdmin(
             })
         }
     );
+}
+
+
+// ============================================================
+// AVATARS
+// ============================================================
+
+async function getAvatars() {
+    return apiFetch('/avatars');
 }

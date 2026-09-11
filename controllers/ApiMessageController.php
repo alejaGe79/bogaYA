@@ -321,7 +321,8 @@ class ApiMessageController
                 id,
                 name,
                 role,
-                foto
+                foto,
+                avatar
             FROM users
             WHERE id = ?
             LIMIT 1
@@ -441,6 +442,7 @@ class ApiMessageController
                 u.id,
                 u.name,
                 u.foto,
+                u.avatar,
 
                 (
                     SELECT m2.message
