@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 10-09-2026 a las 16:48:36
+-- Tiempo de generación: 13-09-2026 a las 20:02:10
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -63,6 +63,42 @@ INSERT INTO `appointments` (`id`, `client_id`, `lawyer_id`, `case_id`, `fecha_ho
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `avatars`
+--
+
+CREATE TABLE `avatars` (
+  `id` int(11) NOT NULL,
+  `codigo` varchar(30) NOT NULL,
+  `nombre` varchar(60) NOT NULL,
+  `archivo` varchar(255) NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `avatars`
+--
+
+INSERT INTO `avatars` (`id`, `codigo`, `nombre`, `archivo`, `activo`, `created_at`) VALUES
+(1, 'avatar_01', 'Gatito', 'avatar_01.png', 1, '2026-09-10 17:41:04'),
+(2, 'avatar_02', 'Perrito', 'avatar_02.png', 1, '2026-09-10 17:41:04'),
+(3, 'avatar_03', 'Osito', 'avatar_03.png', 1, '2026-09-10 17:41:04'),
+(4, 'avatar_04', 'Pandita', 'avatar_04.png', 1, '2026-09-10 17:41:04'),
+(5, 'avatar_05', 'Conejito', 'avatar_05.png', 1, '2026-09-10 17:41:04'),
+(6, 'avatar_06', 'Zorrito', 'avatar_06.png', 1, '2026-09-10 17:41:04'),
+(7, 'avatar_07', 'Koala', 'avatar_07.png', 1, '2026-09-10 17:41:04'),
+(8, 'avatar_08', 'Mapachito', 'avatar_08.png', 1, '2026-09-10 17:41:04'),
+(9, 'avatar_09', 'Pingüinito', 'avatar_09.png', 1, '2026-09-10 17:41:04'),
+(10, 'avatar_10', 'Búhito', 'avatar_10.png', 1, '2026-09-10 17:41:04'),
+(11, 'avatar_11', 'Capibara', 'avatar_11.png', 1, '2026-09-10 17:41:04'),
+(12, 'avatar_12', 'Leoncito', 'avatar_12.png', 1, '2026-09-10 17:41:04'),
+(13, 'avatar_13', 'Unicornio', 'avatar_13.png', 1, '2026-09-10 17:41:04'),
+(14, 'avatar_14', 'Panda rojo', 'avatar_14.png', 1, '2026-09-10 17:41:04'),
+(15, 'avatar_15', 'Osito polar', 'avatar_15.png', 1, '2026-09-10 17:41:04');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `cases`
 --
 
@@ -85,7 +121,7 @@ CREATE TABLE `cases` (
 
 INSERT INTO `cases` (`id`, `client_id`, `titulo`, `descripcion`, `area_legal`, `provincia`, `vigencia_dias`, `fecha_cierre`, `estado`, `created_at`) VALUES
 ('45348983-418d-4997-ac49-89f658f224a7', 5, 'Abogado del niño', 'Me quiero divorciar de mis padres', 'Familia', 'Buenos Aires', 30, '2026-09-10 12:43:49', 'cerrado', '2026-09-09 09:03:41'),
-('574585c5-b917-4bf6-a22a-3d73693f0f6d', 8, 'Debito de mi sueldo', 'El banco ma saca casi todo mi sueldo', 'Comercial', 'Buenos Aires', 30, NULL, 'en_negociacion', '2026-09-10 14:21:14'),
+('574585c5-b917-4bf6-a22a-3d73693f0f6d', 8, 'Debito de mi sueldo', 'El banco ma saca casi todo mi sueldo', 'Comercial', 'Buenos Aires', 30, '2026-09-10 17:32:46', 'cerrado', '2026-09-10 14:21:14'),
 ('75386b75-92e1-49ee-8649-2ac607647d7f', 4, 'Me despidieron sin causa', 'Sol aleja me despidieron sin causa', 'Laboral', 'Buenos Aires', 30, '2026-09-10 12:45:15', 'cerrado', '2026-09-08 19:39:07'),
 ('ad2aa7ce-2358-41b6-9ada-95189f54259d', 5, 'Abuso de autoridad', 'Las maestras nos quitaron el recreo', 'Familia', 'Buenos Aires', 30, '2026-09-10 15:03:14', 'cerrado', '2026-09-10 14:57:51');
 
@@ -196,10 +232,14 @@ INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `case_id`, `message`, 
 (3, 4, 2, NULL, 'hola dol', 1, '2026-09-10 15:33:42'),
 (4, 4, 2, NULL, 'sol', 1, '2026-09-10 15:43:41'),
 (5, 8, 2, NULL, 'sol', 1, '2026-09-10 15:45:54'),
-(6, 2, 8, NULL, 'hola', 0, '2026-09-10 16:33:24'),
+(6, 2, 8, NULL, 'hola', 1, '2026-09-10 16:33:24'),
 (7, 5, 2, NULL, 'no escribe', 1, '2026-09-10 16:34:37'),
 (8, 2, 5, NULL, 'a ver', 1, '2026-09-10 16:43:23'),
-(9, 5, 3, NULL, 'dsffdsfsd', 0, '2026-09-10 16:46:19');
+(9, 5, 3, NULL, 'dsffdsfsd', 0, '2026-09-10 16:46:19'),
+(10, 2, 5, NULL, 'aca estoy', 0, '2026-09-10 17:32:16'),
+(11, 8, 2, NULL, 'hola', 1, '2026-09-10 17:33:22'),
+(12, 2, 8, NULL, 'aca estoy', 0, '2026-09-10 17:37:37'),
+(13, 2, 5, NULL, 'hfdfgfdgdf', 0, '2026-09-10 17:37:45');
 
 -- --------------------------------------------------------
 
@@ -257,10 +297,15 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `message`, `link`
 (32, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 15:44:20', '2026-09-10 15:43:42'),
 (33, 2, 'proposal_accepted', '🎉 Propuesta aceptada', 'Tu propuesta fue aceptada por el cliente.', '/dashboard-lawyer', '2026-09-10 15:46:12', '2026-09-10 15:45:32'),
 (34, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 15:46:12', '2026-09-10 15:45:55'),
-(35, 8, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', NULL, '2026-09-10 16:33:24'),
+(35, 8, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:33:01', '2026-09-10 16:33:24'),
 (36, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 16:43:09', '2026-09-10 16:34:38'),
 (37, 5, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 16:43:40', '2026-09-10 16:43:23'),
-(38, 3, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', NULL, '2026-09-10 16:46:19');
+(38, 3, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', NULL, '2026-09-10 16:46:19'),
+(39, 5, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:43:19', '2026-09-10 17:32:16'),
+(40, 8, 'case_closed', '📌 Caso cerrado', 'El abogado cerró el caso. Ahora podés dejar una reseña.', '/dashboard', '2026-09-10 17:33:01', '2026-09-10 17:32:46'),
+(41, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:37:29', '2026-09-10 17:33:24'),
+(42, 8, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', NULL, '2026-09-10 17:37:37'),
+(43, 5, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:43:19', '2026-09-10 17:37:45');
 
 -- --------------------------------------------------------
 
@@ -393,7 +438,8 @@ INSERT INTO `users` (`id`, `email`, `email_verified`, `verification_token`, `ver
 (5, 'rio@gmail.com', 1, NULL, NULL, '$2y$10$5PEsLEqknJ6qntwIDZopp.4UyqZ/tKL8XfD5Ud3YLWjcKMhFaCAze', 'Rio', 'client', '2213456789', NULL, '2026-09-09 08:36:29', 'avatar_01'),
 (6, 'piti@mail.com', 1, NULL, NULL, '$2y$10$VnxPPJK3UGZ4Jlx7vUGVteK8sz77tNjTLlo9.k0n.WqNr.fxaryoe', 'Piti Alvarez', 'client', '', NULL, '2026-09-10 12:54:57', 'avatar_01'),
 (7, 'burlando@mail.com', 1, NULL, NULL, '$2y$10$DFZwzEMExKiGZpFM75zkEeq3zCqClXMZ0rxa8y2CMZQzLbZA2dsjK', 'Burlando', 'lawyer', '11 2345 6787', '/bogaya/public/uploads/lawyer_7_aeab2fddfcb09f2a.png', '2026-09-10 13:07:57', 'avatar_01'),
-(8, 'prey@mail.com', 1, NULL, NULL, '$2y$10$7nsuKpGyx6TrBxpg7.7H1.M3p5ShA8gDQTtahDJkypm2XaXECQnmq', 'Patricio Rey', 'client', '11 3453 5647', NULL, '2026-09-10 14:19:12', 'avatar_01');
+(8, 'prey@mail.com', 1, NULL, NULL, '$2y$10$7nsuKpGyx6TrBxpg7.7H1.M3p5ShA8gDQTtahDJkypm2XaXECQnmq', 'Patricio Rey', 'client', '11 3453 5647', NULL, '2026-09-10 14:19:12', 'avatar_01'),
+(9, 'yaco@mail.com', 1, NULL, NULL, '$2y$10$H7pGTLLADt7rm1XbYHJEceqwWY3Gouto3ul6tY5/QeB0nacqlZoOy', 'yaco', 'client', '221 333 4444', NULL, '2026-09-13 19:54:40', 'avatar_11');
 
 --
 -- Índices para tablas volcadas
@@ -414,6 +460,13 @@ ALTER TABLE `appointments`
   ADD KEY `case_id` (`case_id`),
   ADD KEY `idx_appointments_lawyer` (`lawyer_id`),
   ADD KEY `idx_appointments_client` (`client_id`);
+
+--
+-- Indices de la tabla `avatars`
+--
+ALTER TABLE `avatars`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
 -- Indices de la tabla `cases`
@@ -520,6 +573,12 @@ ALTER TABLE `appointments`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `avatars`
+--
+ALTER TABLE `avatars`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
 -- AUTO_INCREMENT de la tabla `estudios`
 --
 ALTER TABLE `estudios`
@@ -535,13 +594,13 @@ ALTER TABLE `lawyer_specialties`
 -- AUTO_INCREMENT de la tabla `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT de la tabla `payments`
@@ -571,7 +630,7 @@ ALTER TABLE `reviews`
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- Restricciones para tablas volcadas

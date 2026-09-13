@@ -111,6 +111,17 @@ class ApiUserController
         $name = trim($input['name'] ?? '');
         $email = trim($input['email'] ?? '');
         $phone = trim($input['phone'] ?? '');
+        $avatar = trim(
+            $input['avatar'] ?? 'avatar_01'
+        );
+        if (
+            !preg_match(
+                '/^avatar_(0[1-9]|1[0-9]|20)$/',
+                $avatar
+            )
+        ) {
+            $avatar = 'avatar_01';
+        }
 
         if ($name === '') {
             Response::error('El nombre es obligatorio', 400);
@@ -131,13 +142,15 @@ class ApiUserController
                 UPDATE users
                 SET
                     name = ?,
-                    phone = ?
+                    phone = ?,
+                    avatar = ?
                 WHERE id = ?
             ");
 
             $stmt->execute([
                 $name,
                 $phone,
+                $avatar,
                 $userId
             ]);
 
@@ -189,7 +202,17 @@ class ApiUserController
             $input['phone'] ?? ''
         );
 
-        $avatar = trim($input['avatar'] ?? 'avatar_01');
+         $avatar = trim(
+            $input['avatar'] ?? 'avatar_01'
+        );
+        if (
+            !preg_match(
+                '/^avatar_(0[1-9]|1[0-9]|20)$/',
+                $avatar
+            )
+        ) {
+            $avatar = 'avatar_01';
+        }
 
         if ($name === '') {
             Response::error(
@@ -262,7 +285,7 @@ class ApiUserController
                 UPDATE users
                 SET
                     name = ?,
-                    phone = ?
+                    phone = ?,
                     avatar = ?
                 WHERE id = ?
             ");
@@ -351,6 +374,8 @@ class ApiUserController
                 );
 
             $avatars[] = [
+                'codigo' => $name,
+                'nombre' => $name,
                 'name' => $name,
                 'file' => '/bogaya/public/avatars/' . $filename
             ];

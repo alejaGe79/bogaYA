@@ -14,9 +14,24 @@ class ApiAuthController {
             Response::error('El email ya está registrado. Por favor, inicia sesión o usa otro email.', 409);
         }
         
+
+        //
         $hash = password_hash($input['password'], PASSWORD_DEFAULT);
         $token = bin2hex(random_bytes(32));
         $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+        
+        $token = bin2hex(
+            random_bytes(32)
+        );
+
+        $expires = date(
+            'Y-m-d H:i:s',
+            strtotime('+24 hours')
+        );
+
+        $avatar = trim(
+            $input['avatar'] ?? 'avatar_01'
+        );
         if (
             !preg_match(
                 '/^avatar_(0[1-9]|1[0-9]|20)$/',
@@ -27,7 +42,7 @@ class ApiAuthController {
         }
         try {
             $stmt = $db->prepare("INSERT INTO users (email, email_verified, verification_token, verification_expires, password_hash, role, name, phone, avatar, created_at) 
-                                  VALUES (?, 0, ?, ?, ?, ?, ?, ?, NOW())");
+                                  VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, NOW())");
             $stmt->execute([
                 $input['email'],
                 $token,

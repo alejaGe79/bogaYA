@@ -1406,6 +1406,7 @@ async function showEditProfileModal() {
                         <input
                             type="email"
                             name="email"
+                            id="edit-email"
                             value="${p.email || ''}"
                             required
                             readonly
@@ -1746,6 +1747,14 @@ async function showEditProfileModal() {
 
         try {
 
+            const response =
+                await getUserProfile();
+
+            const p =
+                response.success
+                    ? response.data
+                    : {};
+
             const avatarsResponse =
                 await getAvatars();
 
@@ -1757,133 +1766,57 @@ async function showEditProfileModal() {
                     ? avatarsResponse.data
                     : [];
 
-            modal.innerHTML = `
-    <div
-        class="modal-content"
-        style="
-            max-width:520px;
-            max-height:90vh;
-            overflow-y:auto;
-        "
-    >
+            const modal =
+                document.createElement('div');
 
-        <h2>
-            <i class="fas fa-user-edit"></i>
-            Editar perfil
-        </h2>
+            modal.className = 'modal';
+            modal.id = 'editProfileModal';
 
-        <label>
-            Nombre completo
-        </label>
-
-        <input
-            type="text"
-            id="edit-name"
-            value="${p.name || ''}"
-            required
-        >
-
-        <label>
-            Email
-        </label>
-
-        <input
-            type="email"
-            value="${p.email || ''}"
-            readonly
-        >
-
-        <small
-            style="
-                display:block;
-                margin:4px 0 12px;
-                color:#64748b;
-            "
-        >
-            🔒 El email es tu identificador de cuenta
-            y no puede modificarse.
-        </small>
-
-        <label>
-            Teléfono
-        </label>
-
-        <input
-            type="text"
-            id="edit-phone"
-            value="${p.phone || ''}"
-        >
-
-        <label>
-            Elegí tu avatar
-        </label>
-
-        <div
-            id="avatar-selector"
-            style="
-                display:grid;
-                grid-template-columns:
-                    repeat(5, 1fr);
-                gap:10px;
-                margin-top:10px;
-                margin-bottom:15px;
-            "
-        >
-
-            ${avatars.map(a => `
-                    <button
-                        type="button"
+            modal.innerHTML = `<div class="modal-content" style="max-width:520px; max-height:90vh; overflow-y:auto;">
+                <h2><i class="fas fa-user-edit"></i>Editar perfil</h2>
+                <label>Nombre completo</label>
+                <input type="text" id="edit-name" value="${p.name || ''}" required>
+                <label>Email</label>
+                <input type="email" value="${p.email || ''}"  id="edit-email" readonly>
+                <small style="display:block; margin:4px 0 12px; color:#64748b;">
+                    🔒 El email es tu identificador de cuenta
+                    y no puede modificarse.
+                </small>
+                <label>Teléfono</label>
+                <input type="text" id="edit-phone" value="${p.phone || ''}">
+                <label>Elegí tu avatar</label>
+                <div id="avatar-selector" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-top:10px; margin-bottom:15px;">
+                ${avatars.map(a => `<button type="button"
                         class="avatar-option"
                         data-avatar="${a.codigo}"
                         title="${a.nombre}"
-                        onclick="
-                            window.selectAvatar(
-                                '${a.codigo}'
-                            )
-                        "
-                        style="
-                            border:2px solid
-                                ${a.codigo ===
-                    (p.avatar || 'avatar_01')
-                    ? '#2563eb'
-                    : '#e5e7eb'
-                };
+                        onclick="window.selectAvatar('${a.codigo}')"  style="border:2px solid ${a.codigo === (p.avatar || 'avatar_01') ? '#2563eb' : '#e5e7eb'};
                             background:#fff;
                             border-radius:14px;
                             padding:6px;
                             cursor:pointer;
                         "
                     >
-
-                        <img
-                            src="${window.getAvatarUrl(
-                    a.codigo
-                )}"
-                            alt="${a.nombre}"
-                            style="
-                                width:100%;
+                    <img
+                        src="${window.getAvatarUrl(a.codigo)}"
+                        alt="${a.nombre}"
+                        style="
+                            width:100%;
                                 aspect-ratio:1;
                                 object-fit:cover;
                                 border-radius:10px;
                             "
-                        >
-
-                        <small>
-                            ${a.nombre}
-                        </small>
-
+                    >
+                    <small>${a.nombre}</small>
                     </button>
                 `).join('')
                 }
-
-        </div>
-
         <input
             type="hidden"
             id="edit-avatar"
             value="${p.avatar || 'avatar_01'}"
         >
-
+</div>
         <div class="btn-group">
 
             <button
@@ -1905,6 +1838,7 @@ async function showEditProfileModal() {
 
     </div>
 `;
+            document.body.appendChild(modal);
 
         } catch (e) {
 
@@ -1933,6 +1867,11 @@ async function saveClientProfile() {
             'edit-phone'
         ).value.trim();
 
+    const avatar =
+        document.getElementById(
+            'edit-avatar'
+        ).value || 'avatar_01';
+
     if (!name) {
         alert(
             'El nombre es obligatorio.'
@@ -1950,7 +1889,8 @@ async function saveClientProfile() {
     const data = {
         name,
         email,
-        phone
+        phone,
+        avatar
     };
 
     try {
