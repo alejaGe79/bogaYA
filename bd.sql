@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 13-09-2026 a las 20:02:10
+-- Tiempo de generación: 13-09-2026 a las 22:26:47
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -57,7 +57,7 @@ CREATE TABLE `appointments` (
 INSERT INTO `appointments` (`id`, `client_id`, `lawyer_id`, `case_id`, `fecha_hora`, `duracion_minutos`, `modalidad`, `direccion`, `estado`, `notas_cliente`, `notas_abogado`, `created_at`) VALUES
 (1, 4, 2, NULL, '2026-09-16 10:45:00', 60, 'virtual', '', 'cancelada', 'es muy urgente', ' | Solicitud de cambio de fecha: 2026-09-11T12:30 - Motivo: puede ser un poquito mas tarde? | Solicitud de cambio de fecha: 2026-09-16T10:45 - Motivo: cambio juez', '2026-09-08 19:39:45'),
 (2, 4, 2, NULL, '2026-09-16 14:00:00', 60, 'virtual', '', 'confirmada', '', NULL, '2026-09-10 12:47:20'),
-(3, 5, 7, NULL, '2026-09-17 15:14:00', 60, 'virtual', '', 'confirmada', '', NULL, '2026-09-10 13:12:52'),
+(3, 5, 7, NULL, '2026-09-18 15:00:00', 60, 'virtual', '', 'pendiente', '', ' | Solicitud de cambio de fecha: 2026-09-18T15:00 - Motivo: imprevisto doc', '2026-09-10 13:12:52'),
 (4, 4, 7, NULL, '2026-09-13 17:14:00', 60, 'virtual', '', 'confirmada', '', NULL, '2026-09-10 14:12:01');
 
 -- --------------------------------------------------------
@@ -167,9 +167,9 @@ CREATE TABLE `lawyer_profiles` (
 --
 
 INSERT INTO `lawyer_profiles` (`user_id`, `matricula`, `provincia`, `ciudad`, `bio`, `costo_consulta`, `virtual`, `presencial`, `lat`, `lng`, `plan_type`, `plan_expires`, `verified`, `mostrar_telefono`, `estudio_id`) VALUES
-(2, 'VXXIII 49', 'Buenos Aires', '', 'www.bucciestudiojuridico.com.ar', 35000.00, 1, 1, NULL, NULL, 'comun', NULL, 1, 1, NULL),
+(2, 'VXXIII 49', 'Buenos Aires', '', 'www.bucciestudiojuridico.com.ar...', 32000.00, 1, 0, NULL, NULL, 'comun', NULL, 1, 1, NULL),
 (3, 'MAT-001', 'Buenos Aires', '', 'Patricio Melconi', 50000.00, 1, 1, NULL, NULL, 'comun', NULL, 1, 1, NULL),
-(7, 'MAT-934', 'Buenos Aires', '', 'burlando.com', 100000.00, 0, 1, NULL, NULL, 'comun', NULL, 1, 0, NULL);
+(7, 'MAT-934', 'Buenos Aires', '', 'burlando.com', 100000.00, 1, 1, NULL, NULL, 'comun', NULL, 0, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -188,23 +188,10 @@ CREATE TABLE `lawyer_specialties` (
 --
 
 INSERT INTO `lawyer_specialties` (`id`, `user_id`, `especialidad`) VALUES
-(11, 2, 'Civil'),
-(13, 2, 'Familia'),
-(14, 2, 'Inmobiliario'),
-(10, 2, 'Laboral'),
-(12, 2, 'Penal'),
-(15, 2, 'Sucesiones'),
 (7, 3, 'Civil'),
 (6, 3, 'Familia'),
 (8, 3, 'Laboral'),
-(9, 3, 'Penal'),
-(17, 7, 'Civil'),
-(19, 7, 'Comercial'),
-(20, 7, 'Inmobiliario'),
-(16, 7, 'Laboral'),
-(18, 7, 'Penal'),
-(22, 7, 'Sucesiones'),
-(21, 7, 'Tributario');
+(9, 3, 'Penal');
 
 -- --------------------------------------------------------
 
@@ -236,10 +223,11 @@ INSERT INTO `messages` (`id`, `sender_id`, `receiver_id`, `case_id`, `message`, 
 (7, 5, 2, NULL, 'no escribe', 1, '2026-09-10 16:34:37'),
 (8, 2, 5, NULL, 'a ver', 1, '2026-09-10 16:43:23'),
 (9, 5, 3, NULL, 'dsffdsfsd', 0, '2026-09-10 16:46:19'),
-(10, 2, 5, NULL, 'aca estoy', 0, '2026-09-10 17:32:16'),
+(10, 2, 5, NULL, 'aca estoy', 1, '2026-09-10 17:32:16'),
 (11, 8, 2, NULL, 'hola', 1, '2026-09-10 17:33:22'),
 (12, 2, 8, NULL, 'aca estoy', 0, '2026-09-10 17:37:37'),
-(13, 2, 5, NULL, 'hfdfgfdgdf', 0, '2026-09-10 17:37:45');
+(13, 2, 5, NULL, 'hfdfgfdgdf', 1, '2026-09-10 17:37:45'),
+(14, 5, 2, NULL, 'mama', 1, '2026-09-13 22:11:20');
 
 -- --------------------------------------------------------
 
@@ -305,7 +293,9 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `message`, `link`
 (40, 8, 'case_closed', '📌 Caso cerrado', 'El abogado cerró el caso. Ahora podés dejar una reseña.', '/dashboard', '2026-09-10 17:33:01', '2026-09-10 17:32:46'),
 (41, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:37:29', '2026-09-10 17:33:24'),
 (42, 8, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', NULL, '2026-09-10 17:37:37'),
-(43, 5, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:43:19', '2026-09-10 17:37:45');
+(43, 5, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-10 17:43:19', '2026-09-10 17:37:45'),
+(44, 7, 'appointment_rescheduled', '📅 Cambio de turno', 'Se ha solicitado un cambio de fecha para el turno.', '/agenda', '2026-09-13 21:57:18', '2026-09-13 21:57:03'),
+(45, 2, 'new_message', '💬 Nuevo mensaje', 'Recibiste un nuevo mensaje en BogaYA.', '/messages', '2026-09-13 22:11:57', '2026-09-13 22:11:21');
 
 -- --------------------------------------------------------
 
@@ -432,12 +422,12 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `email`, `email_verified`, `verification_token`, `verification_expires`, `password_hash`, `name`, `role`, `phone`, `foto`, `created_at`, `avatar`) VALUES
 (1, 'admin@bogaya.com', 1, 'a35480a13e816706afe94107fe0e18bedba0ace8e814760812addbedc4657bee', NULL, '$2y$10$V/EGJ4esp9Sbv0s.nKXkg./XZVIccwtqsbDUIVRU6b8PgWJlOGRuu', 'Administrador', 'admin', NULL, NULL, '2026-09-08 13:02:53', 'avatar_01'),
-(2, 'msolbucci@gmail.com', 1, 'a35480a13e816706afe94107fe0e18bedba0ace8e814760812addbedc4657bee', '2026-09-09 13:16:59', '$2y$10$S.Zj13Rw.xzxvD7KyEn/OOpcu/MSzhEgADGlLytYfWdkbcIuPQ.Re', 'Maria Sol', 'lawyer', '221 637 2123', '/bogaya/public/uploads/lawyer_2_438664cf21327513.png', '2026-09-08 13:16:59', 'avatar_01'),
+(2, 'msolbucci@gmail.com', 1, 'a35480a13e816706afe94107fe0e18bedba0ace8e814760812addbedc4657bee', '2026-09-09 13:16:59', '$2y$10$S.Zj13Rw.xzxvD7KyEn/OOpcu/MSzhEgADGlLytYfWdkbcIuPQ.Re', 'Maria Sol', 'lawyer', '221 456 7865', '/bogaya/public/uploads/lawyer_2_438664cf21327513.png', '2026-09-08 13:16:59', 'avatar_01'),
 (3, 'pomelc@gmail.com', 1, 'c23b97f70a2152eb70f5e316d4bd960b35f5cdb3e2aef414c8fcd86dc1754b94', '2026-09-09 13:17:31', '$2y$10$V/EGJ4esp9Sbv0s.nKXkg./XZVIccwtqsbDUIVRU6b8PgWJlOGRuu', 'Patricio Melconi', 'lawyer', '221 456 4534', '/bogaya/public/uploads/lawyer_3_2acec6518ac5f89b.png', '2026-09-08 13:17:31', 'avatar_01'),
 (4, 'aleja.geier@gmail.com', 1, 'ac45d064304401b3160ae67e0b646fab3421c8cb5fe3217a67d67c55e2653f7b', '2026-09-09 13:18:29', '$2y$10$TbErwHVOH7rTHLCv/rhDveEZedBj6XVCNpm.57xrcOa65BmAupvza', 'Aleja Geier', 'client', '221 6372123', NULL, '2026-09-08 13:18:29', 'avatar_01'),
-(5, 'rio@gmail.com', 1, NULL, NULL, '$2y$10$5PEsLEqknJ6qntwIDZopp.4UyqZ/tKL8XfD5Ud3YLWjcKMhFaCAze', 'Rio', 'client', '2213456789', NULL, '2026-09-09 08:36:29', 'avatar_01'),
+(5, 'rio@gmail.com', 1, NULL, NULL, '$2y$10$5PEsLEqknJ6qntwIDZopp.4UyqZ/tKL8XfD5Ud3YLWjcKMhFaCAze', 'Rio', 'client', '2213456788', NULL, '2026-09-09 08:36:29', 'avatar_01'),
 (6, 'piti@mail.com', 1, NULL, NULL, '$2y$10$VnxPPJK3UGZ4Jlx7vUGVteK8sz77tNjTLlo9.k0n.WqNr.fxaryoe', 'Piti Alvarez', 'client', '', NULL, '2026-09-10 12:54:57', 'avatar_01'),
-(7, 'burlando@mail.com', 1, NULL, NULL, '$2y$10$DFZwzEMExKiGZpFM75zkEeq3zCqClXMZ0rxa8y2CMZQzLbZA2dsjK', 'Burlando', 'lawyer', '11 2345 6787', '/bogaya/public/uploads/lawyer_7_aeab2fddfcb09f2a.png', '2026-09-10 13:07:57', 'avatar_01'),
+(7, 'burlando@mail.com', 1, NULL, NULL, '$2y$10$DFZwzEMExKiGZpFM75zkEeq3zCqClXMZ0rxa8y2CMZQzLbZA2dsjK', 'Burlando', 'lawyer', '221 637 2123', '/bogaya/public/uploads/lawyer_7_aeab2fddfcb09f2a.png', '2026-09-10 13:07:57', 'avatar_01'),
 (8, 'prey@mail.com', 1, NULL, NULL, '$2y$10$7nsuKpGyx6TrBxpg7.7H1.M3p5ShA8gDQTtahDJkypm2XaXECQnmq', 'Patricio Rey', 'client', '11 3453 5647', NULL, '2026-09-10 14:19:12', 'avatar_01'),
 (9, 'yaco@mail.com', 1, NULL, NULL, '$2y$10$H7pGTLLADt7rm1XbYHJEceqwWY3Gouto3ul6tY5/QeB0nacqlZoOy', 'yaco', 'client', '221 333 4444', NULL, '2026-09-13 19:54:40', 'avatar_11');
 
@@ -588,19 +578,19 @@ ALTER TABLE `estudios`
 -- AUTO_INCREMENT de la tabla `lawyer_specialties`
 --
 ALTER TABLE `lawyer_specialties`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT de la tabla `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT de la tabla `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT de la tabla `payments`
