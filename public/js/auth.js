@@ -69,9 +69,11 @@ window.loadAvatarSelector = async function () {
                         src="${avatar.file}"
                         alt="${avatar.name}"
                         style="
-                            width:100%;
-                            aspect-ratio:1;
-                            object-fit:contain;
+                            width: 80px;
+                            height: 80px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            border: 3px solid #e2e8f0;
                             display:block;
                         "
                     >

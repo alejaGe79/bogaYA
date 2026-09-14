@@ -334,8 +334,8 @@ window.openConversation = async function (
                 "
             >
 
-                ${response.data.length
-            ? response.data.map(m => {
+                ${response.messages.length
+            ? response.messages.map(m => {
 
                 const mine =
                     Number(m.sender_id) ===
@@ -1234,7 +1234,7 @@ window.loadProfile = async function () {
                 ${profileData.bio ? `<p class="profile-bio">${profileData.bio}</p>` : ''}
                 <div class="profile-actions">
                     <button class="btn-primary" onclick="window.showEditProfileModal()">
-                        <i class="fas fa-edit"></i> Editar perfil
+                        <i class="fas fa-edit"></i> Editar perfil ...
                     </button>
                     <button class="btn-secondary" onclick="window.upgradePlan()">
                         <i class="fas fa-crown"></i> Mejorar plan
@@ -1276,10 +1276,11 @@ window.loadProfile = async function () {
         )}"
                             alt="Avatar"
                             style="
-                                width:100%;
-                                height:100%;
-                                object-fit:cover;
-                                border-radius:50%;
+                                width: 80px;
+                                height: 80px;
+                                border-radius: 50%;
+                                object-fit: cover;
+                                border: 3px solid #e2e8f0;
                             "
                         >
 
@@ -1386,7 +1387,7 @@ async function showEditProfileModal() {
 
                     <h2>
                         <i class="fas fa-edit"></i>
-                        Editar perfil
+                        Editar perfil Abogado
                     </h2>
 
                     <form id="editProfileForm"
@@ -1417,6 +1418,7 @@ async function showEditProfileModal() {
                         <input
                             type="text"
                             name="phone"
+                            id="edit-phone"
                             value="${p.phone || ''}"
                         >
 
@@ -1801,10 +1803,11 @@ async function showEditProfileModal() {
                         src="${window.getAvatarUrl(a.codigo)}"
                         alt="${a.nombre}"
                         style="
-                            width:100%;
-                                aspect-ratio:1;
-                                object-fit:cover;
-                                border-radius:10px;
+                            width: 80px;
+                            height: 80px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            border: 3px solid #e2e8f0;
                             "
                     >
                     <small>${a.nombre}</small>
@@ -2553,9 +2556,11 @@ window.loadMessages = async function () {
                                             src="${c.foto}"
                                             alt="${c.name || 'Usuario'}"
                                             style="
-                                                width:100%;
-                                                height:100%;
-                                                object-fit:cover;
+                                                width: 80px;
+                                                height: 80px;
+                                                border-radius: 50%;
+                                                object-fit: cover;
+                                                border: 3px solid #e2e8f0;
                                             "
                                         >
                                       `

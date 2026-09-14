@@ -14,7 +14,7 @@ function lawyerEditProfile() {
     const html = `
         <div class="modal" id="editProfileModal">
             <div class="modal-content">
-                <h2>Editar Perfil de Abogado</h2>
+                <h2>Editar Perfil de Abogado...</h2>
                 <form id="lawyer-profile-form">
                     <label>Matrícula:</label>
                     <input type="text" id="edit-matricula" placeholder="Número de matrícula">

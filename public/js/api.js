@@ -579,6 +579,11 @@ async function sendMessageApi(
     });
 }
 
+async function getConversations() {
+    return apiFetch(
+        '/messages'
+    );
+}
 
 // ============================================================
 // PAGOS
